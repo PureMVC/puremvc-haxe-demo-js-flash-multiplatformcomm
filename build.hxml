@@ -3,14 +3,14 @@
 # Your reuse is governed by the Creative Commons Attribution 3.0 License 
 
 # multi platform communication demo
--cp src
+#-cp path_to_pureMVC
 -cp demo
 MultiplatformComm
 -js deploy/multiplatformComm/out.js
 --override
 
 --next
--cp src
+#-cp path_to_pureMVC
 -cp demo
 -main org.puremvc.haxe.examples.multiplatformComm.external.ExternalView
 -swf deploy/multiplatformComm/out_fl9.swf
@@ -19,7 +19,7 @@ MultiplatformComm
 --override
 
 --next
--cp src
+#-cp path_to_pureMVC
 -cp demo
 -main org.puremvc.haxe.examples.multiplatformComm.external.ExternalView
 -swf deploy/multiplatformComm/out_fl8.swf
