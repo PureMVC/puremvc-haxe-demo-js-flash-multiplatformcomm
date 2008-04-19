@@ -1,7 +1,7 @@
 /* 
- PureMVC haXe Demo - Multiplatform Communications
- PureMVC - Copyright(c) 2008Marco Secchi <marco.secchi@puremvc.org> 
- Your reuse is governed by the Creative Commons Attribution 3.0 License 
+ PureMVC haXe Demo - JavaScript / Flash Multiplatform Comm
+ By Marco Secchi <marco.secchi@puremvc.org>
+ Copyright(c) 2008 Marco Secchi, Some rights reserved.
  */
 package org.puremvc.haxe.examples.multiplatformComm.view;
 

@@ -1,13 +1,13 @@
+/* 
+ PureMVC haXe Demo - JavaScript / Flash Multiplatform Comm
+ By Marco Secchi <marco.secchi@puremvc.org>
+ Copyright(c) 2008 Marco Secchi, Some rights reserved.
+ */
 package org.puremvc.haxe.examples.multiplatformComm.view;
 
 import org.puremvc.haxe.patterns.mediator.Mediator;
 import org.puremvc.haxe.interfaces.INotification;
 import org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer;
-/* 
- PureMVC haXe Demo - Multiplatform Communications
- PureMVC - Copyright(c) 2008Marco Secchi <marco.secchi@puremvc.org> 
- Your reuse is governed by the Creative Commons Attribution 3.0 License 
- */
 import org.puremvc.haxe.examples.multiplatformComm.MultiplatformFacade;
 
 class BoxMediator extends Mediator
