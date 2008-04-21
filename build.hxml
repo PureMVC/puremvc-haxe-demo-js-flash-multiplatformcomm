@@ -5,7 +5,7 @@
 # multi platform communication demo
 
 # compile for javascript
--cp path_to_pureMVC
+-cp path_to_pureMVC #change to your pureMVC source path
 -cp src
 -main MultiplatformComm
 -js bin/multiplatformComm/out.js
@@ -13,7 +13,7 @@
 
 # compile for flash9
 --next
--cp path_to_pureMVC
+-cp path_to_pureMVC #change to your pureMVC source path
 -cp src
 -main org.puremvc.haxe.examples.multiplatformComm.external.ExternalView
 -swf bin/multiplatformComm/out_fl9.swf
@@ -23,7 +23,7 @@
 
 # compile for flash8
 --next
--cp path_to_pureMVC
+-cp path_to_pureMVC #change to your pureMVC source path
 -cp src
 -main org.puremvc.haxe.examples.multiplatformComm.external.ExternalView
 -swf bin/multiplatformComm/out_fl8.swf
