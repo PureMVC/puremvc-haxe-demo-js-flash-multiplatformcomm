@@ -3,14 +3,17 @@
 # Copyright(c) 2008 Marco Secchi, Some rights reserved.
 
 # multi platform communication demo
-#-cp path_to_pureMVC
+
+# compile for javascript
+-cp path_to_pureMVC
 -cp src
-MultiplatformComm
+-main MultiplatformComm
 -js bin/multiplatformComm/out.js
 --override
 
+# compile for flash9
 --next
-#-cp path_to_pureMVC
+-cp path_to_pureMVC
 -cp src
 -main org.puremvc.haxe.examples.multiplatformComm.external.ExternalView
 -swf bin/multiplatformComm/out_fl9.swf
@@ -18,8 +21,9 @@ MultiplatformComm
 -swf-header 540:60:31
 --override
 
+# compile for flash8
 --next
-#-cp path_to_pureMVC
+-cp path_to_pureMVC
 -cp src
 -main org.puremvc.haxe.examples.multiplatformComm.external.ExternalView
 -swf bin/multiplatformComm/out_fl8.swf
