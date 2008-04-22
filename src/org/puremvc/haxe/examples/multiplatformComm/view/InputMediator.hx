@@ -15,12 +15,18 @@ class InputMediator extends Mediator
 {
 	public static inline var NAME: String = "InputMediator";
 
+	/**
+	 * Constructor. Initializes event listeners
+	 */
 	public function new()
 	{
 		super();
 		js.Lib.document.getElementById( "send_link" ).onclick = onLinkClick;
 	}
 	
+	/**
+	 * Click Handler. Checks if input value is acceptable and sends notification
+	 */
 	private function onLinkClick( evt: js.Event ): Void
 	{
 		var val = Std.parseInt( cast( js.Lib.document.getElementById( "distance" ) ).value );
@@ -30,6 +36,9 @@ class InputMediator extends Mediator
 			facade.sendNotification( MultiplatformFacade.VALUE_SET, val );
 	}
 	
+	/*
+	 * Returns the name of the mediator
+	 */
 	override public function getMediatorName(): String
 	{
 		return NAME;	

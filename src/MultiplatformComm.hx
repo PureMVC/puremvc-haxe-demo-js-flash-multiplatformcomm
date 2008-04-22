@@ -7,17 +7,26 @@ import org.puremvc.haxe.examples.multiplatformComm.MultiplatformFacade;
 
 class MultiplatformComm
 {
+	/**
+	 * Constructor.
+	 */
 	public function new()
 	{
 		haxe.Timer.delayed( init, 800 )();
 	}
 	
+	/**
+	 * Starts the application by sending a notification
+	 */
 	private function init(): Void
 	{
 		var facade = MultiplatformFacade.getInstance();
 		facade.sendNotification( MultiplatformFacade.STARTUP );		
 	}
 
+	/**
+	 * Entry point.
+	 */
 	public static function main(): Void
 	{
 		var app = new MultiplatformComm();

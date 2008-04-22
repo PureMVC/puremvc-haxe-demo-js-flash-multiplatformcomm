@@ -14,6 +14,9 @@ class BoxContainer
 	public static inline var FL9_TYPE: String	= "fl9_type";
 	public static inline var FL8_TYPE: String	= "fl8_type";
 
+	/**
+	 * Constructor. Creates a flash connection through haxe remoting
+	 */
 	public function new( t: String )
 	{
 		_type = t;
@@ -24,6 +27,9 @@ class BoxContainer
 			_conn = haxe.remoting.Connection.flashConnect( "haxe_fl8" );
 	}
 	
+	/**
+	 * Updates the view value (in the case of flash through haxe remoting)
+	 */
 	public function update( val: Int ): Void
 	{
 		switch( _type )

@@ -14,6 +14,10 @@ class ExternalView
 	private static var box: flash.MovieClip;
 	#end
 
+	/**
+	 * Constructor. Creates ui components and delays the initialization to
+	 * to syncronize between flash/js
+	 */
 	public function new()
 	{
 		#if flash9
@@ -35,11 +39,17 @@ class ExternalView
 		haxe.Timer.delayed( init, 800 )();
 	}
 	
+	/**
+	 * Connects with js through haXe remoting.
+	 */
 	private function init(): Void
 	{
 		var js = haxe.remoting.Connection.jsConnect();
 	}
 
+	/**
+	 * Updates the ui.
+	 */
 	public static function update( val: Int ): Void
 	{
 		#if flash9
@@ -49,6 +59,9 @@ class ExternalView
 		#end
 	}
 
+	/**
+	 * Entry point.
+	 */
 	public static function main()
 	{
 		var app = new ExternalView();

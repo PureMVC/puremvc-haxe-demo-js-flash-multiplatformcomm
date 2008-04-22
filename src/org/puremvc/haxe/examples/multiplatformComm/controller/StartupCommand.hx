@@ -15,6 +15,9 @@ import org.puremvc.haxe.interfaces.INotification;
 class StartupCommand extends SimpleCommand
 {
 
+	/**
+	 * Creates and registers mediators.
+	 */
 	override public function execute( note: INotification ): Void
 	{
 		facade.registerMediator( new InputMediator() );
