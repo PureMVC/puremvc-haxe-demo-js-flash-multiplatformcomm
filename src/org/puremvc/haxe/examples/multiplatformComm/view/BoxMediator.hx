@@ -17,9 +17,9 @@ class BoxMediator extends Mediator
 	private var _name: String;
 
 	//	constants for mediator names
+	public static inline var FL8_BOX_MEDIATOR: String	= "fl8_box_mediator";
 	public static inline var FL9_BOX_MEDIATOR: String	= "fl9_box_mediator";
 	public static inline var JS_BOX_MEDIATOR: String	= "js_box_mediator";
-	public static inline var FL8_BOX_MEDIATOR: String	= "fl8_box_mediator";
 	
 	/**
 	 * Constructor.
@@ -39,7 +39,7 @@ class BoxMediator extends Mediator
 		{
 			case MultiplatformFacade.VALUE_SET:
 				viewComponent.update( notification.getBody() );
-		}	
+		}
 	}
 	
 	/**

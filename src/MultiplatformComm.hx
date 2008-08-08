@@ -9,21 +9,14 @@ class MultiplatformComm
 {
 	/**
 	 * Constructor.
-	 */
-	public function new()
-	{
-		haxe.Timer.delayed( init, 800 )();
-	}
-	
-	/**
 	 * Starts the application by sending a notification
 	 */
-	private function init(): Void
+	public function new()
 	{
 		var facade = MultiplatformFacade.getInstance();
 		facade.sendNotification( MultiplatformFacade.STARTUP );		
 	}
-
+	
 	/**
 	 * Entry point.
 	 */

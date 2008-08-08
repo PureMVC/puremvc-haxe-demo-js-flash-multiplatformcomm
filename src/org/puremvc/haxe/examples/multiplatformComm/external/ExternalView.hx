@@ -10,13 +10,15 @@ class ExternalView
 
 	#if flash9
 	private static var box: flash.display.Sprite;
-	#else flash8
+	#elseif flash8
 	private static var box: flash.MovieClip;
 	#end
+	
+	private static var connection: haxe.remoting.ExternalConnection;
 
 	/**
-	 * Constructor. Creates ui components and delays the initialization to
-	 * to syncronize between flash/js
+	 * Constructor. Creates ui components and connects with js
+	 * through haXe remoting
 	 */
 	public function new()
 	{
@@ -26,7 +28,7 @@ class ExternalView
 			box.y = 10;
 			box.graphics.drawRect( 0, 0, 40, 40 );
 			flash.Lib.current.addChild( box );
-		#else flash8
+		#elseif flash8
 			box = flash.Lib.current.createEmptyMovieClip( "box_mc", 100 );
 			box._y = 10;
 			box.beginFill( 0x666666 );
@@ -36,17 +38,18 @@ class ExternalView
 			box.lineTo( 40, 0 );
 			box.endFill();
 		#end
-		haxe.Timer.delayed( init, 800 )();
+
+		var context = new haxe.remoting.Context();
+
+		#if flash9
+		context.addObject( "ExternalView_fl9", ExternalView );
+		#elseif flash8
+		context.addObject( "ExternalView_fl8", ExternalView );
+		#end
+
+		connection = haxe.remoting.ExternalConnection.jsConnect( "default", context );
 	}
 	
-	/**
-	 * Connects with js through haXe remoting.
-	 */
-	private function init(): Void
-	{
-		var js = haxe.remoting.Connection.jsConnect();
-	}
-
 	/**
 	 * Updates the ui.
 	 */
@@ -54,7 +57,7 @@ class ExternalView
 	{
 		#if flash9
 			box.x = val;
-		#else flash8
+		#elseif flash8
 			box._x = val;
 		#end
 	}

@@ -10,6 +10,7 @@ org.puremvc.haxe.interfaces.IView.prototype.notifyObservers = null;
 org.puremvc.haxe.interfaces.IView.prototype.registerMediator = null;
 org.puremvc.haxe.interfaces.IView.prototype.registerObserver = null;
 org.puremvc.haxe.interfaces.IView.prototype.removeMediator = null;
+org.puremvc.haxe.interfaces.IView.prototype.removeObserver = null;
 org.puremvc.haxe.interfaces.IView.prototype.retrieveMediator = null;
 org.puremvc.haxe.interfaces.IView.prototype.__class__ = org.puremvc.haxe.interfaces.IView;
 org.puremvc.haxe.interfaces.INotification = function() { }
@@ -21,6 +22,45 @@ org.puremvc.haxe.interfaces.INotification.prototype.setBody = null;
 org.puremvc.haxe.interfaces.INotification.prototype.setType = null;
 org.puremvc.haxe.interfaces.INotification.prototype.toString = null;
 org.puremvc.haxe.interfaces.INotification.prototype.__class__ = org.puremvc.haxe.interfaces.INotification;
+haxe = {}
+haxe.io = {}
+haxe.io.BytesBuffer = function(p) { if( p === $_ ) return; {
+	this.b = new Array();
+}}
+haxe.io.BytesBuffer.__name__ = ["haxe","io","BytesBuffer"];
+haxe.io.BytesBuffer.prototype.add = function(src) {
+	var b1 = this.b;
+	var b2 = src.b;
+	{
+		var _g1 = 0, _g = src.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this.b.push(b2[i]);
+		}
+	}
+}
+haxe.io.BytesBuffer.prototype.addByte = function($byte) {
+	this.b.push($byte);
+}
+haxe.io.BytesBuffer.prototype.addBytes = function(src,pos,len) {
+	if(pos < 0 || len < 0 || pos + len > src.length) throw haxe.io.Error.OutsideBounds;
+	var b1 = this.b;
+	var b2 = src.b;
+	{
+		var _g1 = pos, _g = pos + len;
+		while(_g1 < _g) {
+			var i = _g1++;
+			this.b.push(b2[i]);
+		}
+	}
+}
+haxe.io.BytesBuffer.prototype.b = null;
+haxe.io.BytesBuffer.prototype.getBytes = function() {
+	var bytes = new haxe.io.Bytes(this.b.length,this.b);
+	this.b = null;
+	return bytes;
+}
+haxe.io.BytesBuffer.prototype.__class__ = haxe.io.BytesBuffer;
 StringTools = function() { }
 StringTools.__name__ = ["StringTools"];
 StringTools.urlEncode = function(s) {
@@ -127,9 +167,9 @@ StringTools.baseEncode = function(s,base) {
 			buf |= t;
 		}
 		curbits -= nbits;
-		out.addChar(base.charCodeAt((buf >> curbits) & mask));
+		out.b += String.fromCharCode(base.charCodeAt((buf >> curbits) & mask));
 	}
-	return out.toString();
+	return out.b;
 }
 StringTools.baseDecode = function(s,base) {
 	var len = base.length;
@@ -166,9 +206,9 @@ StringTools.baseDecode = function(s,base) {
 			buf |= i;
 		}
 		curbits -= 8;
-		out.addChar((buf >> curbits) & 255);
+		out.b += String.fromCharCode((buf >> curbits) & 255);
 	}
-	return out.toString();
+	return out.b;
 }
 StringTools.hex = function(n,digits) {
 	var neg = false;
@@ -183,34 +223,114 @@ StringTools.hex = function(n,digits) {
 	return s;
 }
 StringTools.prototype.__class__ = StringTools;
-Reflect = function() { }
-Reflect.__name__ = ["Reflect"];
-Reflect.empty = function() {
-	return {}
+org.puremvc.haxe.core = {}
+org.puremvc.haxe.core.View = function(p) { if( p === $_ ) return; {
+	org.puremvc.haxe.core.View.instance = this;
+	this.mediatorMap = new Hash();
+	this.observerMap = new Hash();
+	this.initializeView();
+}}
+org.puremvc.haxe.core.View.__name__ = ["org","puremvc","haxe","core","View"];
+org.puremvc.haxe.core.View.getInstance = function() {
+	if(org.puremvc.haxe.core.View.instance == null) org.puremvc.haxe.core.View.instance = new org.puremvc.haxe.core.View();
+	return org.puremvc.haxe.core.View.instance;
 }
-Reflect.hasField = function(o,field) {
-	{
-		if(o.hasOwnProperty != null) return o.hasOwnProperty(field);
-		var arr = Reflect.fields(o);
-		{ var $it0 = arr.iterator();
-		while( $it0.hasNext() ) { var t = $it0.next();
-		if(t == field) return true;
+org.puremvc.haxe.core.View.instance = null;
+org.puremvc.haxe.core.View.prototype.hasMediator = function(mediatorName) {
+	return this.mediatorMap.exists(mediatorName);
+}
+org.puremvc.haxe.core.View.prototype.initializeView = function() {
+	null;
+}
+org.puremvc.haxe.core.View.prototype.mediatorMap = null;
+org.puremvc.haxe.core.View.prototype.notifyObservers = function(notification) {
+	if(this.observerMap.exists(notification.getName())) {
+		var iterator = this.observerMap.get(notification.getName()).iterator();
+		{ var $it0 = iterator;
+		while( $it0.hasNext() ) { var observer = $it0.next();
+		observer.notifyObserver(notification);
 		}}
-		return false;
 	}
 }
-Reflect.field = function(o,field) {
-	try {
-		return o[field];
-	}
-	catch( $e1 ) {
+org.puremvc.haxe.core.View.prototype.observerMap = null;
+org.puremvc.haxe.core.View.prototype.registerMediator = function(mediator) {
+	this.mediatorMap.set(mediator.getMediatorName(),mediator);
+	var interests = mediator.listNotificationInterests();
+	if(interests.length > 0) {
+		var observer = new org.puremvc.haxe.patterns.observer.Observer($closure(mediator,"handleNotification"),mediator);
 		{
-			var e = $e1;
-			{
-				return null;
+			var _g1 = 0, _g = interests.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				this.registerObserver(interests[i],observer);
 			}
 		}
 	}
+	mediator.onRegister();
+}
+org.puremvc.haxe.core.View.prototype.registerObserver = function(notificationName,observer) {
+	if(!this.observerMap.exists(notificationName)) this.observerMap.set(notificationName,new List());
+	this.observerMap.get(notificationName).add(observer);
+}
+org.puremvc.haxe.core.View.prototype.removeMediator = function(mediatorName) {
+	var mediator = this.mediatorMap.get(mediatorName);
+	if(mediator != null) {
+		var interests = mediator.listNotificationInterests();
+		{
+			var _g1 = 0, _g = interests.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				this.removeObserver(interests[i],mediator);
+			}
+		}
+		this.mediatorMap.remove(mediatorName);
+		mediator.onRemove();
+	}
+	return mediator;
+}
+org.puremvc.haxe.core.View.prototype.removeObserver = function(notificationName,notifyContext) {
+	var observers = this.observerMap.get(notificationName);
+	{ var $it1 = observers.iterator();
+	while( $it1.hasNext() ) { var observer = $it1.next();
+	{
+		if(observer.compareNotifyContext(notifyContext) == true) {
+			observers.remove(observer);
+			break;
+		}
+	}
+	}}
+	if(observers.isEmpty()) {
+		this.observerMap.remove(notificationName);
+	}
+}
+org.puremvc.haxe.core.View.prototype.retrieveMediator = function(mediatorName) {
+	return this.mediatorMap.get(mediatorName);
+}
+org.puremvc.haxe.core.View.prototype.__class__ = org.puremvc.haxe.core.View;
+org.puremvc.haxe.core.View.__interfaces__ = [org.puremvc.haxe.interfaces.IView];
+Reflect = function() { }
+Reflect.__name__ = ["Reflect"];
+Reflect.hasField = function(o,field) {
+	if(o.hasOwnProperty != null) return o.hasOwnProperty(field);
+	var arr = Reflect.fields(o);
+	{ var $it2 = arr.iterator();
+	while( $it2.hasNext() ) { var t = $it2.next();
+	if(t == field) return true;
+	}}
+	return false;
+}
+Reflect.field = function(o,field) {
+	var v = null;
+	try {
+		v = o[field];
+	}
+	catch( $e3 ) {
+		{
+			var e = $e3;
+			null;
+		}
+	}
+	return v;
 }
 Reflect.setField = function(o,field,value) {
 	o[field] = value;
@@ -220,38 +340,36 @@ Reflect.callMethod = function(o,func,args) {
 }
 Reflect.fields = function(o) {
 	if(o == null) return new Array();
-	{
-		var a = new Array();
-		if(o.hasOwnProperty) {
-			
+	var a = new Array();
+	if(o.hasOwnProperty) {
+		
 					for(var i in o)
 						if( o.hasOwnProperty(i) )
 							a.push(i);
 				;
+	}
+	else {
+		var t;
+		try {
+			t = o.__proto__;
 		}
-		else {
-			var t;
-			try {
-				t = o.__proto__;
-			}
-			catch( $e2 ) {
+		catch( $e4 ) {
+			{
+				var e = $e4;
 				{
-					var e = $e2;
-					{
-						t = null;
-					}
+					t = null;
 				}
 			}
-			if(t != null) o.__proto__ = null;
-			
+		}
+		if(t != null) o.__proto__ = null;
+		
 					for(var i in o)
 						if( i != "__proto__" )
 							a.push(i);
 				;
-			if(t != null) o.__proto__ = t;
-		}
-		return a;
+		if(t != null) o.__proto__ = t;
 	}
+	return a;
 }
 Reflect.isFunction = function(f) {
 	return typeof(f) == "function" && f.__name__ == null;
@@ -270,20 +388,18 @@ Reflect.isObject = function(v) {
 	return (t == "string" || (t == "object" && !v.__enum__) || (t == "function" && v.__name__ != null));
 }
 Reflect.deleteField = function(o,f) {
-	{
-		if(!Reflect.hasField(o,f)) return false;
-		delete(o[f]);
-		return true;
-	}
+	if(!Reflect.hasField(o,f)) return false;
+	delete(o[f]);
+	return true;
 }
 Reflect.copy = function(o) {
-	var o2 = Reflect.empty();
+	var o2 = { }
 	{
 		var _g = 0, _g1 = Reflect.fields(o);
 		while(_g < _g1.length) {
 			var f = _g1[_g];
 			++_g;
-			Reflect.setField(o2,f,Reflect.field(o,f));
+			o2[f] = Reflect.field(o,f);
 		}
 	}
 	return o2;
@@ -302,80 +418,6 @@ Reflect.makeVarArgs = function(f) {
 	}
 }
 Reflect.prototype.__class__ = Reflect;
-org.puremvc.haxe.core = {}
-org.puremvc.haxe.core.view = {}
-org.puremvc.haxe.core.view.View = function(p) { if( p === $_ ) return; {
-	org.puremvc.haxe.core.view.View.instance = this;
-	this.mediatorMap = new Hash();
-	this.observerMap = new Hash();
-	this.initializeView();
-}}
-org.puremvc.haxe.core.view.View.__name__ = ["org","puremvc","haxe","core","view","View"];
-org.puremvc.haxe.core.view.View.getInstance = function() {
-	if(org.puremvc.haxe.core.view.View.instance == null) org.puremvc.haxe.core.view.View.instance = new org.puremvc.haxe.core.view.View();
-	return org.puremvc.haxe.core.view.View.instance;
-}
-org.puremvc.haxe.core.view.View.instance = null;
-org.puremvc.haxe.core.view.View.prototype.hasMediator = function(mediatorName) {
-	return this.mediatorMap.exists(mediatorName);
-}
-org.puremvc.haxe.core.view.View.prototype.initializeView = function() {
-	null;
-}
-org.puremvc.haxe.core.view.View.prototype.mediatorMap = null;
-org.puremvc.haxe.core.view.View.prototype.notifyObservers = function(notification) {
-	if(this.observerMap.exists(notification.getName())) {
-		var iterator = this.observerMap.get(notification.getName()).iterator();
-		{ var $it3 = iterator;
-		while( $it3.hasNext() ) { var observer = $it3.next();
-		observer.notifyObserver(notification);
-		}}
-	}
-}
-org.puremvc.haxe.core.view.View.prototype.observerMap = null;
-org.puremvc.haxe.core.view.View.prototype.registerMediator = function(mediator) {
-	this.mediatorMap.set(mediator.getMediatorName(),mediator);
-	var interests = mediator.listNotificationInterests();
-	if(interests.length > 0) {
-		var observer = new org.puremvc.haxe.patterns.observer.Observer($closure(mediator,"handleNotification"),mediator);
-		{
-			var _g1 = 0, _g = interests.length;
-			while(_g1 < _g) {
-				var i = _g1++;
-				this.registerObserver(interests[i],observer);
-			}
-		}
-	}
-	mediator.onRegister();
-}
-org.puremvc.haxe.core.view.View.prototype.registerObserver = function(notificationName,observer) {
-	if(!this.observerMap.exists(notificationName)) this.observerMap.set(notificationName,new List());
-	this.observerMap.get(notificationName).add(observer);
-}
-org.puremvc.haxe.core.view.View.prototype.removeMediator = function(mediatorName) {
-	{ var $it4 = this.observerMap.keys();
-	while( $it4.hasNext() ) { var notificationName = $it4.next();
-	{
-		var observers = this.observerMap.get(notificationName);
-		{ var $it5 = observers.iterator();
-		while( $it5.hasNext() ) { var observer = $it5.next();
-		{
-			if(observer.compareNotifyContext(this.retrieveMediator(mediatorName)) == true) observers.remove(observer);
-		}
-		}}
-		if(observers.isEmpty()) this.observerMap.remove(notificationName);
-	}
-	}}
-	var mediator = this.mediatorMap.get(mediatorName);
-	this.mediatorMap.remove(mediatorName);
-	if(mediator != null) mediator.onRemove();
-	return mediator;
-}
-org.puremvc.haxe.core.view.View.prototype.retrieveMediator = function(mediatorName) {
-	return this.mediatorMap.get(mediatorName);
-}
-org.puremvc.haxe.core.view.View.prototype.__class__ = org.puremvc.haxe.core.view.View;
-org.puremvc.haxe.core.view.View.__interfaces__ = [org.puremvc.haxe.interfaces.IView];
 org.puremvc.haxe.interfaces.IObserver = function() { }
 org.puremvc.haxe.interfaces.IObserver.__name__ = ["org","puremvc","haxe","interfaces","IObserver"];
 org.puremvc.haxe.interfaces.IObserver.prototype.compareNotifyContext = null;
@@ -391,7 +433,7 @@ org.puremvc.haxe.patterns.observer.Observer = function(notifyMethod,notifyContex
 }}
 org.puremvc.haxe.patterns.observer.Observer.__name__ = ["org","puremvc","haxe","patterns","observer","Observer"];
 org.puremvc.haxe.patterns.observer.Observer.prototype.compareNotifyContext = function(object) {
-	return object === this.context;
+	return object == this.context;
 }
 org.puremvc.haxe.patterns.observer.Observer.prototype.context = null;
 org.puremvc.haxe.patterns.observer.Observer.prototype.getNotifyContext = function() {
@@ -417,6 +459,7 @@ org.puremvc.haxe.interfaces.IFacade.__name__ = ["org","puremvc","haxe","interfac
 org.puremvc.haxe.interfaces.IFacade.prototype.hasCommand = null;
 org.puremvc.haxe.interfaces.IFacade.prototype.hasMediator = null;
 org.puremvc.haxe.interfaces.IFacade.prototype.hasProxy = null;
+org.puremvc.haxe.interfaces.IFacade.prototype.notifyObservers = null;
 org.puremvc.haxe.interfaces.IFacade.prototype.registerCommand = null;
 org.puremvc.haxe.interfaces.IFacade.prototype.registerMediator = null;
 org.puremvc.haxe.interfaces.IFacade.prototype.registerProxy = null;
@@ -450,7 +493,7 @@ org.puremvc.haxe.patterns.facade.Facade.prototype.hasProxy = function(proxyName)
 }
 org.puremvc.haxe.patterns.facade.Facade.prototype.initializeController = function() {
 	if(this.controller != null) return;
-	this.controller = org.puremvc.haxe.core.controller.Controller.getInstance();
+	this.controller = org.puremvc.haxe.core.Controller.getInstance();
 }
 org.puremvc.haxe.patterns.facade.Facade.prototype.initializeFacade = function() {
 	this.initializeModel();
@@ -459,11 +502,11 @@ org.puremvc.haxe.patterns.facade.Facade.prototype.initializeFacade = function() 
 }
 org.puremvc.haxe.patterns.facade.Facade.prototype.initializeModel = function() {
 	if(this.model != null) return;
-	this.model = org.puremvc.haxe.core.model.Model.getInstance();
+	this.model = org.puremvc.haxe.core.Model.getInstance();
 }
 org.puremvc.haxe.patterns.facade.Facade.prototype.initializeView = function() {
 	if(this.view != null) return;
-	this.view = org.puremvc.haxe.core.view.View.getInstance();
+	this.view = org.puremvc.haxe.core.View.getInstance();
 }
 org.puremvc.haxe.patterns.facade.Facade.prototype.model = null;
 org.puremvc.haxe.patterns.facade.Facade.prototype.notifyObservers = function(notification) {
@@ -482,12 +525,12 @@ org.puremvc.haxe.patterns.facade.Facade.prototype.removeCommand = function(notif
 	this.controller.removeCommand(notificationName);
 }
 org.puremvc.haxe.patterns.facade.Facade.prototype.removeMediator = function(mediatorName) {
-	var mediator;
+	var mediator = null;
 	if(this.view != null) mediator = this.view.removeMediator(mediatorName);
 	return mediator;
 }
 org.puremvc.haxe.patterns.facade.Facade.prototype.removeProxy = function(proxyName) {
-	var proxy;
+	var proxy = null;
 	if(this.model != null) proxy = this.model.removeProxy(proxyName);
 	return proxy;
 }
@@ -567,48 +610,6 @@ org.puremvc.haxe.examples.multiplatformComm.controller.StartupCommand.prototype.
 	this.facade.registerMediator(new org.puremvc.haxe.examples.multiplatformComm.view.BoxMediator("fl9_box_mediator",new org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer("fl9_type")));
 }
 org.puremvc.haxe.examples.multiplatformComm.controller.StartupCommand.prototype.__class__ = org.puremvc.haxe.examples.multiplatformComm.controller.StartupCommand;
-org.puremvc.haxe.interfaces.IController = function() { }
-org.puremvc.haxe.interfaces.IController.__name__ = ["org","puremvc","haxe","interfaces","IController"];
-org.puremvc.haxe.interfaces.IController.prototype.executeCommand = null;
-org.puremvc.haxe.interfaces.IController.prototype.hasCommand = null;
-org.puremvc.haxe.interfaces.IController.prototype.registerCommand = null;
-org.puremvc.haxe.interfaces.IController.prototype.removeCommand = null;
-org.puremvc.haxe.interfaces.IController.prototype.__class__ = org.puremvc.haxe.interfaces.IController;
-org.puremvc.haxe.core.controller = {}
-org.puremvc.haxe.core.controller.Controller = function(p) { if( p === $_ ) return; {
-	org.puremvc.haxe.core.controller.Controller.instance = this;
-	this.commandMap = new Hash();
-	this.initializeController();
-}}
-org.puremvc.haxe.core.controller.Controller.__name__ = ["org","puremvc","haxe","core","controller","Controller"];
-org.puremvc.haxe.core.controller.Controller.getInstance = function() {
-	if(org.puremvc.haxe.core.controller.Controller.instance == null) org.puremvc.haxe.core.controller.Controller.instance = new org.puremvc.haxe.core.controller.Controller();
-	return org.puremvc.haxe.core.controller.Controller.instance;
-}
-org.puremvc.haxe.core.controller.Controller.instance = null;
-org.puremvc.haxe.core.controller.Controller.prototype.commandMap = null;
-org.puremvc.haxe.core.controller.Controller.prototype.executeCommand = function(note) {
-	var commandClassRef = this.commandMap.get(note.getName());
-	if(commandClassRef == null) return;
-	var commandInstance = Type.createInstance(commandClassRef,[]);
-	commandInstance.execute(note);
-}
-org.puremvc.haxe.core.controller.Controller.prototype.hasCommand = function(notificationName) {
-	return this.commandMap.exists(notificationName);
-}
-org.puremvc.haxe.core.controller.Controller.prototype.initializeController = function() {
-	this.view = org.puremvc.haxe.core.view.View.getInstance();
-}
-org.puremvc.haxe.core.controller.Controller.prototype.registerCommand = function(notificationName,commandClassRef) {
-	if(!this.commandMap.exists(notificationName)) this.view.registerObserver(notificationName,new org.puremvc.haxe.patterns.observer.Observer($closure(this,"executeCommand"),this));
-	this.commandMap.set(notificationName,commandClassRef);
-}
-org.puremvc.haxe.core.controller.Controller.prototype.removeCommand = function(notificationName) {
-	this.commandMap.remove(notificationName);
-}
-org.puremvc.haxe.core.controller.Controller.prototype.view = null;
-org.puremvc.haxe.core.controller.Controller.prototype.__class__ = org.puremvc.haxe.core.controller.Controller;
-org.puremvc.haxe.core.controller.Controller.__interfaces__ = [org.puremvc.haxe.interfaces.IController];
 org.puremvc.haxe.interfaces.IMediator = function() { }
 org.puremvc.haxe.interfaces.IMediator.__name__ = ["org","puremvc","haxe","interfaces","IMediator"];
 org.puremvc.haxe.interfaces.IMediator.prototype.getMediatorName = null;
@@ -670,6 +671,50 @@ org.puremvc.haxe.examples.multiplatformComm.view.InputMediator.prototype.onLinkC
 	else this.facade.sendNotification("value_set",val);
 }
 org.puremvc.haxe.examples.multiplatformComm.view.InputMediator.prototype.__class__ = org.puremvc.haxe.examples.multiplatformComm.view.InputMediator;
+org.puremvc.haxe.interfaces.IController = function() { }
+org.puremvc.haxe.interfaces.IController.__name__ = ["org","puremvc","haxe","interfaces","IController"];
+org.puremvc.haxe.interfaces.IController.prototype.executeCommand = null;
+org.puremvc.haxe.interfaces.IController.prototype.hasCommand = null;
+org.puremvc.haxe.interfaces.IController.prototype.registerCommand = null;
+org.puremvc.haxe.interfaces.IController.prototype.removeCommand = null;
+org.puremvc.haxe.interfaces.IController.prototype.__class__ = org.puremvc.haxe.interfaces.IController;
+org.puremvc.haxe.core.Controller = function(p) { if( p === $_ ) return; {
+	org.puremvc.haxe.core.Controller.instance = this;
+	this.commandMap = new Hash();
+	this.initializeController();
+}}
+org.puremvc.haxe.core.Controller.__name__ = ["org","puremvc","haxe","core","Controller"];
+org.puremvc.haxe.core.Controller.getInstance = function() {
+	if(org.puremvc.haxe.core.Controller.instance == null) org.puremvc.haxe.core.Controller.instance = new org.puremvc.haxe.core.Controller();
+	return org.puremvc.haxe.core.Controller.instance;
+}
+org.puremvc.haxe.core.Controller.instance = null;
+org.puremvc.haxe.core.Controller.prototype.commandMap = null;
+org.puremvc.haxe.core.Controller.prototype.executeCommand = function(note) {
+	var commandClassRef = this.commandMap.get(note.getName());
+	if(commandClassRef == null) return;
+	var commandInstance = Type.createInstance(commandClassRef,[]);
+	commandInstance.execute(note);
+}
+org.puremvc.haxe.core.Controller.prototype.hasCommand = function(notificationName) {
+	return this.commandMap.exists(notificationName);
+}
+org.puremvc.haxe.core.Controller.prototype.initializeController = function() {
+	this.view = org.puremvc.haxe.core.View.getInstance();
+}
+org.puremvc.haxe.core.Controller.prototype.registerCommand = function(notificationName,commandClassRef) {
+	if(!this.commandMap.exists(notificationName)) this.view.registerObserver(notificationName,new org.puremvc.haxe.patterns.observer.Observer($closure(this,"executeCommand"),this));
+	this.commandMap.set(notificationName,commandClassRef);
+}
+org.puremvc.haxe.core.Controller.prototype.removeCommand = function(notificationName) {
+	if(this.hasCommand(notificationName)) {
+		this.view.removeObserver(notificationName,this);
+		this.commandMap.remove(notificationName);
+	}
+}
+org.puremvc.haxe.core.Controller.prototype.view = null;
+org.puremvc.haxe.core.Controller.prototype.__class__ = org.puremvc.haxe.core.Controller;
+org.puremvc.haxe.core.Controller.__interfaces__ = [org.puremvc.haxe.interfaces.IController];
 org.puremvc.haxe.interfaces.IModel = function() { }
 org.puremvc.haxe.interfaces.IModel.__name__ = ["org","puremvc","haxe","interfaces","IModel"];
 org.puremvc.haxe.interfaces.IModel.prototype.hasProxy = null;
@@ -677,11 +722,156 @@ org.puremvc.haxe.interfaces.IModel.prototype.registerProxy = null;
 org.puremvc.haxe.interfaces.IModel.prototype.removeProxy = null;
 org.puremvc.haxe.interfaces.IModel.prototype.retrieveProxy = null;
 org.puremvc.haxe.interfaces.IModel.prototype.__class__ = org.puremvc.haxe.interfaces.IModel;
+haxe.remoting = {}
+haxe.remoting.Connection = function() { }
+haxe.remoting.Connection.__name__ = ["haxe","remoting","Connection"];
+haxe.remoting.Connection.prototype.call = null;
+haxe.remoting.Connection.prototype.resolve = null;
+haxe.remoting.Connection.prototype.__class__ = haxe.remoting.Connection;
+Hash = function(p) { if( p === $_ ) return; {
+	this.h = {}
+	if(this.h.__proto__ != null) {
+		this.h.__proto__ = null;
+		delete(this.h.__proto__);
+	}
+	else null;
+}}
+Hash.__name__ = ["Hash"];
+Hash.prototype.exists = function(key) {
+	try {
+		key = "$" + key;
+		return this.hasOwnProperty.call(this.h,key);
+	}
+	catch( $e5 ) {
+		{
+			var e = $e5;
+			{
+				
+				for(var i in this.h)
+					if( i == key ) return true;
+			;
+				return false;
+			}
+		}
+	}
+}
+Hash.prototype.get = function(key) {
+	return this.h["$" + key];
+}
+Hash.prototype.h = null;
+Hash.prototype.iterator = function() {
+	return { ref : this.h, it : this.keys(), hasNext : function() {
+		return this.it.hasNext();
+	}, next : function() {
+		var i = this.it.next();
+		return this.ref["$" + i];
+	}}
+}
+Hash.prototype.keys = function() {
+	var a = new Array();
+	
+			for(var i in this.h)
+				a.push(i.substr(1));
+		;
+	return a.iterator();
+}
+Hash.prototype.remove = function(key) {
+	if(!this.exists(key)) return false;
+	delete(this.h["$" + key]);
+	return true;
+}
+Hash.prototype.set = function(key,value) {
+	this.h["$" + key] = value;
+}
+Hash.prototype.toString = function() {
+	var s = new StringBuf();
+	s.b += "{";
+	var it = this.keys();
+	{ var $it6 = it;
+	while( $it6.hasNext() ) { var i = $it6.next();
+	{
+		s.b += i;
+		s.b += " => ";
+		s.b += Std.string(this.get(i));
+		if(it.hasNext()) s.b += ", ";
+	}
+	}}
+	s.b += "}";
+	return s.b;
+}
+Hash.prototype.__class__ = Hash;
+haxe.remoting.ExternalConnection = function(data,path) { if( data === $_ ) return; {
+	this.__data = data;
+	this.__path = path;
+}}
+haxe.remoting.ExternalConnection.__name__ = ["haxe","remoting","ExternalConnection"];
+haxe.remoting.ExternalConnection.escapeString = function(s) {
+	return s;
+}
+haxe.remoting.ExternalConnection.doCall = function(name,path,params) {
+	try {
+		var cnx = haxe.remoting.ExternalConnection.connections.get(name);
+		if(cnx == null) throw "Unknown connection : " + name;
+		if(cnx.__data.ctx == null) throw "No context shared for the connection " + name;
+		var params1 = new haxe.Unserializer(params).unserialize();
+		var ret = cnx.__data.ctx.call(path.split("."),params1);
+		var s = new haxe.Serializer();
+		s.serialize(ret);
+		return s.toString() + "#";
+	}
+	catch( $e7 ) {
+		{
+			var e = $e7;
+			{
+				var s = new haxe.Serializer();
+				s.serializeException(e);
+				return s.toString();
+			}
+		}
+	}
+}
+haxe.remoting.ExternalConnection.flashConnect = function(name,flashObjectID,ctx) {
+	var cnx = new haxe.remoting.ExternalConnection({ ctx : ctx, name : name, flash : flashObjectID},[]);
+	haxe.remoting.ExternalConnection.connections.set(name,cnx);
+	return cnx;
+}
+haxe.remoting.ExternalConnection.prototype.__data = null;
+haxe.remoting.ExternalConnection.prototype.__path = null;
+haxe.remoting.ExternalConnection.prototype.call = function(params) {
+	var s = new haxe.Serializer();
+	s.serialize(params);
+	var params1 = s.toString();
+	var data = null;
+	var fobj = window.document[this.__data.flash];
+	if(fobj == null) fobj = window.document.getElementById[this.__data.flash];
+	if(fobj == null) throw "Could not find flash object '" + this.__data.flash + "'";
+	try {
+		data = fobj.externalRemotingCall(this.__data.name,this.__path.join("."),params1);
+	}
+	catch( $e8 ) {
+		{
+			var e = $e8;
+			null;
+		}
+	}
+	if(data == null) throw "Call failure : ExternalConnection is not " + "initialized in Flash";
+	return new haxe.Unserializer(data).unserialize();
+}
+haxe.remoting.ExternalConnection.prototype.close = function() {
+	haxe.remoting.ExternalConnection.connections.remove(this.__data.name);
+}
+haxe.remoting.ExternalConnection.prototype.resolve = function(field) {
+	var e = new haxe.remoting.ExternalConnection(this.__data,this.__path.copy());
+	e.__path.push(field);
+	return e;
+}
+haxe.remoting.ExternalConnection.prototype.__class__ = haxe.remoting.ExternalConnection;
+haxe.remoting.ExternalConnection.__interfaces__ = [haxe.remoting.Connection];
 org.puremvc.haxe.examples.multiplatformComm.view.ui = {}
 org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer = function(t) { if( t === $_ ) return; {
 	this._type = t;
-	if(this._type == "fl9_type") this._conn = haxe.remoting.Connection.flashConnect("haxe_fl9");
-	else if(this._type == "fl8_type") this._conn = haxe.remoting.Connection.flashConnect("haxe_fl8");
+	if(this._type == "fl9_type") this._conn = haxe.remoting.ExternalConnection.flashConnect("default","haxe_fl9");
+	else if(this._type == "fl8_type") this._conn = haxe.remoting.ExternalConnection.flashConnect("default","haxe_fl8");
 }}
 org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer.__name__ = ["org","puremvc","haxe","examples","multiplatformComm","view","ui","BoxContainer"];
 org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer.prototype._conn = null;
@@ -692,48 +882,135 @@ org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer.prototype.updat
 		js.Lib.document.getElementById("box").style.left = Std.string(val) + "px";
 	}break;
 	case "fl9_type":{
-		this._conn.__resolve("org").__resolve("puremvc").__resolve("haxe").__resolve("examples").__resolve("multiplatformComm").__resolve("external").__resolve("ExternalView").__resolve("update").call([val]);
+		this._conn.resolve("ExternalView_fl9").resolve("update").call([val]);
 	}break;
 	case "fl8_type":{
-		this._conn.__resolve("org").__resolve("puremvc").__resolve("haxe").__resolve("examples").__resolve("multiplatformComm").__resolve("external").__resolve("ExternalView").__resolve("update").call([val]);
+		this._conn.resolve("ExternalView_fl8").resolve("update").call([val]);
 	}break;
 	}
 }
 org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer.prototype.__class__ = org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer;
-org.puremvc.haxe.core.model = {}
-org.puremvc.haxe.core.model.Model = function(p) { if( p === $_ ) return; {
-	org.puremvc.haxe.core.model.Model.instance = this;
-	this.proxyMap = new Hash();
-	this.initializeModel();
+haxe.io.Bytes = function(length,b) { if( length === $_ ) return; {
+	this.length = length;
+	this.b = b;
 }}
-org.puremvc.haxe.core.model.Model.__name__ = ["org","puremvc","haxe","core","model","Model"];
-org.puremvc.haxe.core.model.Model.getInstance = function() {
-	if(org.puremvc.haxe.core.model.Model.instance == null) org.puremvc.haxe.core.model.Model.instance = new org.puremvc.haxe.core.model.Model();
-	return org.puremvc.haxe.core.model.Model.instance;
+haxe.io.Bytes.__name__ = ["haxe","io","Bytes"];
+haxe.io.Bytes.alloc = function(length) {
+	var a = new Array();
+	{
+		var _g = 0;
+		while(_g < length) {
+			var i = _g++;
+			a.push(0);
+		}
+	}
+	return new haxe.io.Bytes(length,a);
 }
-org.puremvc.haxe.core.model.Model.instance = null;
-org.puremvc.haxe.core.model.Model.prototype.hasProxy = function(proxyName) {
-	return this.proxyMap.exists(proxyName);
+haxe.io.Bytes.ofString = function(s) {
+	var a = new Array();
+	{
+		var _g1 = 0, _g = s.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var c = s["cca"](i);
+			if(c < 127) a.push(c);
+			else if(c < 2047) {
+				a.push(192 | (c >> 6));
+				a.push(128 | (c & 63));
+			}
+			else if(c <= 65535) {
+				a.push(224 | (c >> 12));
+				a.push(128 | ((c >> 6) & 63));
+				a.push(128 | (c & 63));
+			}
+			else {
+				a.push(240 | (c >> 18));
+				a.push(128 | ((c >> 12) & 63));
+				a.push(128 | ((c >> 6) & 63));
+				a.push(128 | (c & 63));
+			}
+		}
+	}
+	return new haxe.io.Bytes(a.length,a);
 }
-org.puremvc.haxe.core.model.Model.prototype.initializeModel = function() {
-	null;
+haxe.io.Bytes.ofData = function(b) {
+	return new haxe.io.Bytes(b.length,b);
 }
-org.puremvc.haxe.core.model.Model.prototype.proxyMap = null;
-org.puremvc.haxe.core.model.Model.prototype.registerProxy = function(proxy) {
-	this.proxyMap.set(proxy.getProxyName(),proxy);
-	proxy.onRegister();
+haxe.io.Bytes.prototype.b = null;
+haxe.io.Bytes.prototype.blit = function(pos,src,srcpos,len) {
+	if(pos < 0 || srcpos < 0 || len < 0 || pos + len > this.length || srcpos + len > src.length) throw haxe.io.Error.OutsideBounds;
+	var b1 = this.b;
+	var b2 = src.b;
+	if(b1 == b2 && pos > srcpos) {
+		var i = len;
+		while(i > 0) {
+			i--;
+			b1[i + pos] = b2[i + srcpos];
+		}
+		return;
+	}
+	{
+		var _g = 0;
+		while(_g < len) {
+			var i = _g++;
+			b1[i + pos] = b2[i + srcpos];
+		}
+	}
 }
-org.puremvc.haxe.core.model.Model.prototype.removeProxy = function(proxyName) {
-	var proxy = this.proxyMap.get(proxyName);
-	this.proxyMap.remove(proxyName);
-	proxy.onRemove();
-	return proxy;
+haxe.io.Bytes.prototype.compare = function(other) {
+	var b1 = this.b;
+	var b2 = other.b;
+	var len = ((this.length < other.length)?this.length:other.length);
+	{
+		var _g = 0;
+		while(_g < len) {
+			var i = _g++;
+			if(b1[i] != b2[i]) return b1[i] - b2[i];
+		}
+	}
+	return this.length - other.length;
 }
-org.puremvc.haxe.core.model.Model.prototype.retrieveProxy = function(proxyName) {
-	return this.proxyMap.get(proxyName);
+haxe.io.Bytes.prototype.get = function(pos) {
+	return this.b[pos];
 }
-org.puremvc.haxe.core.model.Model.prototype.__class__ = org.puremvc.haxe.core.model.Model;
-org.puremvc.haxe.core.model.Model.__interfaces__ = [org.puremvc.haxe.interfaces.IModel];
+haxe.io.Bytes.prototype.getData = function() {
+	return this.b;
+}
+haxe.io.Bytes.prototype.length = null;
+haxe.io.Bytes.prototype.readString = function(pos,len) {
+	if(pos < 0 || len < 0 || pos + len > this.length) throw haxe.io.Error.OutsideBounds;
+	var s = "";
+	var b = this.b;
+	var fcc = $closure(String,"fromCharCode");
+	var i = pos;
+	var max = pos + len;
+	while(i < max) {
+		var c = b[i++];
+		if(c < 127) s += fcc(c);
+		else if(c < 224) s += fcc(((c & 63) << 6) | (b[i++] & 127));
+		else if(c < 240) {
+			var c2 = b[i++];
+			s += fcc((((c & 31) << 12) | ((c2 & 127) << 6)) | (b[i++] & 127));
+		}
+		else {
+			var c2 = b[i++];
+			var c3 = b[i++];
+			s += fcc(((((c & 15) << 18) | ((c2 & 127) << 12)) | ((c3 << 6) & 127)) | (b[i++] & 127));
+		}
+	}
+	return s;
+}
+haxe.io.Bytes.prototype.set = function(pos,v) {
+	this.b[pos] = v;
+}
+haxe.io.Bytes.prototype.sub = function(pos,len) {
+	if(pos < 0 || len < 0 || pos + len > this.length) throw haxe.io.Error.OutsideBounds;
+	return new haxe.io.Bytes(len,this.b.slice(pos,pos + len));
+}
+haxe.io.Bytes.prototype.toString = function() {
+	return this.readString(0,this.length);
+}
+haxe.io.Bytes.prototype.__class__ = haxe.io.Bytes;
 IntIter = function(min,max) { if( min === $_ ) return; {
 	this.min = min;
 	this.max = max;
@@ -748,76 +1025,19 @@ IntIter.prototype.next = function() {
 	return this.min++;
 }
 IntIter.prototype.__class__ = IntIter;
-haxe = {}
-haxe.Timer = function(time) { if( time === $_ ) return; {
-	this.id = haxe.Timer.arr.length;
-	haxe.Timer.arr[this.id] = this;
-	this.timerId = window.setInterval("haxe.Timer.arr[" + this.id + "].run();",time);
-}}
-haxe.Timer.__name__ = ["haxe","Timer"];
-haxe.Timer.delayed = function(f,time) {
-	return function() {
-		var t = new haxe.Timer(time);
-		t.run = function() {
-			t.stop();
-			f();
-		}
-	}
-}
-haxe.Timer.queue = function(f,time) {
-	haxe.Timer.fqueue.push(f);
-	(haxe.Timer.delayed(function() {
-		(haxe.Timer.fqueue.shift())();
-	},(time == null?0:time)))();
-}
-haxe.Timer.stamp = function() {
-	return Date.now().getTime() / 1000;
-}
-haxe.Timer.prototype.id = null;
-haxe.Timer.prototype.run = function() {
-	null;
-}
-haxe.Timer.prototype.stop = function() {
-	if(this.id == null) return;
-	window.clearInterval(this.timerId);
-	haxe.Timer.arr[this.id] = null;
-	if(this.id > 100 && this.id == haxe.Timer.arr.length - 1) {
-		var p = this.id - 1;
-		while(p >= 0 && haxe.Timer.arr[p] == null) p--;
-		haxe.Timer.arr = haxe.Timer.arr.slice(0,p + 1);
-	}
-	this.id = null;
-}
-haxe.Timer.prototype.timerId = null;
-haxe.Timer.prototype.__class__ = haxe.Timer;
+haxe.io.Error = { __ename__ : ["haxe","io","Error"], __constructs__ : ["Blocked","Overflow","OutsideBounds","Custom"] }
+haxe.io.Error.Blocked = ["Blocked",0];
+haxe.io.Error.Blocked.toString = $estr;
+haxe.io.Error.Blocked.__enum__ = haxe.io.Error;
+haxe.io.Error.Custom = function(e) { var $x = ["Custom",3,e]; $x.__enum__ = haxe.io.Error; $x.toString = $estr; return $x; }
+haxe.io.Error.OutsideBounds = ["OutsideBounds",2];
+haxe.io.Error.OutsideBounds.toString = $estr;
+haxe.io.Error.OutsideBounds.__enum__ = haxe.io.Error;
+haxe.io.Error.Overflow = ["Overflow",1];
+haxe.io.Error.Overflow.toString = $estr;
+haxe.io.Error.Overflow.__enum__ = haxe.io.Error;
 Type = function() { }
 Type.__name__ = ["Type"];
-Type.toEnum = function(t) {
-	try {
-		if(t.__ename__ == null) return null;
-		return t;
-	}
-	catch( $e6 ) {
-		{
-			var e = $e6;
-			null;
-		}
-	}
-	return null;
-}
-Type.toClass = function(t) {
-	try {
-		if(t.__name__ == null) return null;
-		return t;
-	}
-	catch( $e7 ) {
-		{
-			var e = $e7;
-			null;
-		}
-	}
-	return null;
-}
 Type.getClass = function(o) {
 	if(o == null) return null;
 	if(o.__enum__ != null) return null;
@@ -841,48 +1061,53 @@ Type.getEnumName = function(e) {
 }
 Type.resolveClass = function(name) {
 	var cl;
-	{
-		try {
-			cl = eval(name);
-		}
-		catch( $e8 ) {
+	try {
+		cl = eval(name);
+	}
+	catch( $e9 ) {
+		{
+			var e = $e9;
 			{
-				var e = $e8;
-				{
-					cl = null;
-				}
+				cl = null;
 			}
 		}
-		if(cl == null || cl.__name__ == null) return null;
-		else null;
 	}
+	if(cl == null || cl.__name__ == null) return null;
 	return cl;
 }
 Type.resolveEnum = function(name) {
 	var e;
-	{
-		try {
-			e = eval(name);
-		}
-		catch( $e9 ) {
+	try {
+		e = eval(name);
+	}
+	catch( $e10 ) {
+		{
+			var err = $e10;
 			{
-				var e1 = $e9;
-				{
-					e1 = null;
-				}
+				e = null;
 			}
 		}
-		if(e == null || e.__ename__ == null) return null;
-		else null;
 	}
+	if(e == null || e.__ename__ == null) return null;
 	return e;
 }
 Type.createInstance = function(cl,args) {
-	if(args.length >= 6) throw "Too many arguments";
-	return new cl(args[0],args[1],args[2],args[3],args[4],args[5]);
+	if(args.length <= 3) return new cl(args[0],args[1],args[2]);
+	if(args.length > 8) throw "Too many arguments";
+	return new cl(args[0],args[1],args[2],args[3],args[4],args[5],args[6],args[7]);
 }
 Type.createEmptyInstance = function(cl) {
 	return new cl($_);
+}
+Type.createEnum = function(e,constr,params) {
+	var f = Reflect.field(e,constr);
+	if(f == null) throw "No such constructor " + constr;
+	if(Reflect.isFunction(f)) {
+		if(params == null) throw "Constructor " + constr + " need parameters";
+		return f.apply(e,params);
+	}
+	if(params != null && params.length != 0) throw "Constructor " + constr + " does not need parameters";
+	return f;
 }
 Type.getInstanceFields = function(c) {
 	var a = Reflect.fields(c.prototype);
@@ -971,6 +1196,17 @@ haxe.Unserializer = function(buf) { if( buf === $_ ) return; {
 	this.setResolver(haxe.Unserializer.DEFAULT_RESOLVER);
 }}
 haxe.Unserializer.__name__ = ["haxe","Unserializer"];
+haxe.Unserializer.initCodes = function() {
+	var codes = new Array();
+	{
+		var _g1 = 0, _g = haxe.Unserializer.BASE64.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			codes[haxe.Unserializer.BASE64.cca(i)] = i;
+		}
+	}
+	return codes;
+}
 haxe.Unserializer.run = function(v) {
 	return new haxe.Unserializer(v).unserialize();
 }
@@ -1054,10 +1290,11 @@ haxe.Unserializer.prototype.unserialize = function() {
 		return Math.POSITIVE_INFINITY;
 	}break;
 	case 97:{
+		var buf = this.buf;
 		var a = new Array();
 		this.cache.push(a);
 		while(true) {
-			var c = this.buf.charCodeAt(this.pos);
+			var c = buf.charCodeAt(this.pos);
 			if(c == 104) {
 				this.pos++;
 				break;
@@ -1072,7 +1309,7 @@ haxe.Unserializer.prototype.unserialize = function() {
 		return a;
 	}break;
 	case 111:{
-		var o = Reflect.empty();
+		var o = { }
 		this.cache.push(o);
 		this.unserializeObject(o);
 		return o;
@@ -1117,13 +1354,15 @@ haxe.Unserializer.prototype.unserialize = function() {
 	}break;
 	case 108:{
 		var l = new List();
-		while(this.buf.charCodeAt(this.pos) != 104) l.add(this.unserialize());
+		var buf = this.buf;
+		while(buf.charCodeAt(this.pos) != 104) l.add(this.unserialize());
 		this.pos++;
 		return l;
 	}break;
 	case 98:{
 		var h = new Hash();
-		while(this.buf.charCodeAt(this.pos) != 104) {
+		var buf = this.buf;
+		while(buf.charCodeAt(this.pos) != 104) {
 			var s = this.unserialize();
 			h.set(s,this.unserialize());
 		}
@@ -1132,11 +1371,12 @@ haxe.Unserializer.prototype.unserialize = function() {
 	}break;
 	case 113:{
 		var h = new IntHash();
-		var c = this.buf.charCodeAt(this.pos++);
+		var buf = this.buf;
+		var c = buf.charCodeAt(this.pos++);
 		while(c == 58) {
 			var i = this.readDigits();
 			h.set(i,this.unserialize());
-			c = this.buf.charCodeAt(this.pos++);
+			c = buf.charCodeAt(this.pos++);
 		}
 		if(c != 104) throw "Invalid IntHash format";
 		return h;
@@ -1148,11 +1388,39 @@ haxe.Unserializer.prototype.unserialize = function() {
 	}break;
 	case 115:{
 		var len = this.readDigits();
-		if(this.buf.charAt(this.pos++) != ":" || this.length - this.pos < len) throw "Invalid string length";
-		var s = this.buf.substr(this.pos,len);
+		var buf = this.buf;
+		if(buf.charAt(this.pos++) != ":" || this.length - this.pos < len) throw "Invalid bytes length";
+		var codes = haxe.Unserializer.CODES;
+		if(codes == null) {
+			codes = haxe.Unserializer.initCodes();
+			haxe.Unserializer.CODES = codes;
+		}
+		var b = new haxe.io.BytesBuffer();
+		var i = this.pos;
+		var rest = len & 3;
+		var max = i + (len - rest);
+		while(i < max) {
+			var c1 = codes[buf.cca(i++)];
+			var c2 = codes[buf.cca(i++)];
+			b.b.push((c1 << 2) | (c2 >> 4));
+			var c3 = codes[buf.cca(i++)];
+			b.b.push(((c2 << 4) | (c3 >> 2)) & 255);
+			var c4 = codes[buf.cca(i++)];
+			b.b.push(((c3 << 6) | c4) & 255);
+		}
+		if(rest >= 2) {
+			var c1 = codes[buf.cca(i++)];
+			var c2 = codes[buf.cca(i++)];
+			b.b.push((c1 << 2) | (c2 >> 4));
+			if(rest == 3) {
+				var c3 = codes[buf.cca(i++)];
+				b.b.push(((c2 << 4) | (c3 >> 2)) & 255);
+			}
+		}
+		var bytes = b.getBytes();
 		this.pos += len;
-		this.scache.push(s);
-		return s;
+		this.cache.push(bytes);
+		return bytes;
 	}break;
 	default:{
 		null;
@@ -1175,7 +1443,7 @@ haxe.Unserializer.prototype.unserializeEnum = function(edecl,tag) {
 		args.push(this.unserialize());
 		nargs -= 1;
 	}
-	var e = Reflect.callMethod(edecl,constr,args);
+	var e = constr.apply(edecl,args);
 	this.cache.push(e);
 	return e;
 }
@@ -1186,11 +1454,80 @@ haxe.Unserializer.prototype.unserializeObject = function(o) {
 		var k = this.unserialize();
 		if(!Std["is"](k,String)) throw "Invalid object key";
 		var v = this.unserialize();
-		Reflect.setField(o,k,v);
+		o[k] = v;
 	}
 	this.pos++;
 }
 haxe.Unserializer.prototype.__class__ = haxe.Unserializer;
+haxe.remoting.Context = function(p) { if( p === $_ ) return; {
+	this.objects = new Hash();
+}}
+haxe.remoting.Context.__name__ = ["haxe","remoting","Context"];
+haxe.remoting.Context.share = function(name,obj) {
+	var ctx = new haxe.remoting.Context();
+	ctx.addObject(name,obj);
+	return ctx;
+}
+haxe.remoting.Context.prototype.addObject = function(name,obj,recursive) {
+	this.objects.set(name,{ obj : obj, rec : recursive});
+}
+haxe.remoting.Context.prototype.call = function(path,params) {
+	if(path.length < 2) throw "Invalid path '" + path.join(".") + "'";
+	var inf = this.objects.get(path[0]);
+	if(inf == null) throw "No such object " + path[0];
+	var o = inf.obj;
+	var m = Reflect.field(o,path[1]);
+	if(path.length > 2) {
+		if(!inf.rec) throw "Can't access " + path.join(".");
+		{
+			var _g1 = 2, _g = path.length;
+			while(_g1 < _g) {
+				var i = _g1++;
+				o = m;
+				m = Reflect.field(o,path[i]);
+			}
+		}
+	}
+	if(!Reflect.isFunction(m)) throw "No such method " + path.join(".");
+	return m.apply(o,params);
+}
+haxe.remoting.Context.prototype.objects = null;
+haxe.remoting.Context.prototype.__class__ = haxe.remoting.Context;
+org.puremvc.haxe.core.Model = function(p) { if( p === $_ ) return; {
+	org.puremvc.haxe.core.Model.instance = this;
+	this.proxyMap = new Hash();
+	this.initializeModel();
+}}
+org.puremvc.haxe.core.Model.__name__ = ["org","puremvc","haxe","core","Model"];
+org.puremvc.haxe.core.Model.getInstance = function() {
+	if(org.puremvc.haxe.core.Model.instance == null) org.puremvc.haxe.core.Model.instance = new org.puremvc.haxe.core.Model();
+	return org.puremvc.haxe.core.Model.instance;
+}
+org.puremvc.haxe.core.Model.instance = null;
+org.puremvc.haxe.core.Model.prototype.hasProxy = function(proxyName) {
+	return this.proxyMap.exists(proxyName);
+}
+org.puremvc.haxe.core.Model.prototype.initializeModel = function() {
+	null;
+}
+org.puremvc.haxe.core.Model.prototype.proxyMap = null;
+org.puremvc.haxe.core.Model.prototype.registerProxy = function(proxy) {
+	this.proxyMap.set(proxy.getProxyName(),proxy);
+	proxy.onRegister();
+}
+org.puremvc.haxe.core.Model.prototype.removeProxy = function(proxyName) {
+	var proxy = this.proxyMap.get(proxyName);
+	if(proxy != null) {
+		this.proxyMap.remove(proxyName);
+		proxy.onRemove();
+	}
+	return proxy;
+}
+org.puremvc.haxe.core.Model.prototype.retrieveProxy = function(proxyName) {
+	return this.proxyMap.get(proxyName);
+}
+org.puremvc.haxe.core.Model.prototype.__class__ = org.puremvc.haxe.core.Model;
+org.puremvc.haxe.core.Model.__interfaces__ = [org.puremvc.haxe.interfaces.IModel];
 Std = function() { }
 Std.__name__ = ["Std"];
 Std["is"] = function(v,t) {
@@ -1203,31 +1540,16 @@ Std["int"] = function(x) {
 	if(x < 0) return Math.ceil(x);
 	return Math.floor(x);
 }
-Std.bool = function(x) {
-	return (x !== 0 && x != null && x !== false);
-}
 Std.parseInt = function(x) {
-	{
-		var v = parseInt(x);
-		if(Math.isNaN(v)) return null;
-		return v;
-	}
+	var v = parseInt(x);
+	if(Math.isNaN(v)) return null;
+	return v;
 }
 Std.parseFloat = function(x) {
 	return parseFloat(x);
 }
-Std.chr = function(x) {
-	return String.fromCharCode(x);
-}
-Std.ord = function(x) {
-	if(x == "") return null;
-	else return x.charCodeAt(0);
-}
 Std.random = function(x) {
 	return Math.floor(Math.random() * x);
-}
-Std.resource = function(name) {
-	return js.Boot.__res[name];
 }
 Std.prototype.__class__ = Std;
 org.puremvc.haxe.interfaces.IProxy = function() { }
@@ -1260,29 +1582,29 @@ haxe.Serializer.prototype.serialize = function(v) {
 	switch( $e[1] ) {
 	case 0:
 	{
-		this.buf.add("n");
+		this.buf.b += "n";
 	}break;
 	case 1:
 	{
 		if(v == 0) {
-			this.buf.add("z");
+			this.buf.b += "z";
 			return;
 		}
-		this.buf.add("i");
-		this.buf.add(v);
+		this.buf.b += "i";
+		this.buf.b += v;
 	}break;
 	case 2:
 	{
-		if(Math.isNaN(v)) this.buf.add("k");
-		else if(!Math.isFinite(v)) this.buf.add((v < 0?"m":"p"));
+		if(Math.isNaN(v)) this.buf.b += "k";
+		else if(!Math.isFinite(v)) this.buf.b += (v < 0?"m":"p");
 		else {
-			this.buf.add("d");
-			this.buf.add(v);
+			this.buf.b += "d";
+			this.buf.b += v;
 		}
 	}break;
 	case 3:
 	{
-		this.buf.add((v?"t":"f"));
+		this.buf.b += (v?"t":"f");
 	}break;
 	case 6:
 	var c = $e[2];
@@ -1295,7 +1617,7 @@ haxe.Serializer.prototype.serialize = function(v) {
 		switch(c) {
 		case Array:{
 			var ucount = 0;
-			this.buf.add("a");
+			this.buf.b += "a";
 			var l = v["length"];
 			{
 				var _g = 0;
@@ -1304,10 +1626,10 @@ haxe.Serializer.prototype.serialize = function(v) {
 					if(v[i] == null) ucount++;
 					else {
 						if(ucount > 0) {
-							if(ucount == 1) this.buf.add("n");
+							if(ucount == 1) this.buf.b += "n";
 							else {
-								this.buf.add("u");
-								this.buf.add(ucount);
+								this.buf.b += "u";
+								this.buf.b += ucount;
 							}
 							ucount = 0;
 						}
@@ -1316,56 +1638,82 @@ haxe.Serializer.prototype.serialize = function(v) {
 				}
 			}
 			if(ucount > 0) {
-				if(ucount == 1) this.buf.add("n");
+				if(ucount == 1) this.buf.b += "n";
 				else {
-					this.buf.add("u");
-					this.buf.add(ucount);
+					this.buf.b += "u";
+					this.buf.b += ucount;
 				}
 			}
-			this.buf.add("h");
+			this.buf.b += "h";
 		}break;
 		case List:{
-			this.buf.add("l");
+			this.buf.b += "l";
 			var v1 = v;
-			{ var $it10 = v1.iterator();
-			while( $it10.hasNext() ) { var i = $it10.next();
+			{ var $it11 = v1.iterator();
+			while( $it11.hasNext() ) { var i = $it11.next();
 			this.serialize(i);
 			}}
-			this.buf.add("h");
+			this.buf.b += "h";
 		}break;
 		case Date:{
 			var d = v;
-			this.buf.add("v");
-			this.buf.add(d.toString());
+			this.buf.b += "v";
+			this.buf.b += d.toString();
 		}break;
 		case Hash:{
-			this.buf.add("b");
+			this.buf.b += "b";
 			var v1 = v;
-			{ var $it11 = v1.keys();
-			while( $it11.hasNext() ) { var k = $it11.next();
+			{ var $it12 = v1.keys();
+			while( $it12.hasNext() ) { var k = $it12.next();
 			{
 				this.serializeString(k);
 				this.serialize(v1.get(k));
 			}
 			}}
-			this.buf.add("h");
+			this.buf.b += "h";
 		}break;
 		case IntHash:{
-			this.buf.add("q");
+			this.buf.b += "q";
 			var v1 = v;
-			{ var $it12 = v1.keys();
-			while( $it12.hasNext() ) { var k = $it12.next();
+			{ var $it13 = v1.keys();
+			while( $it13.hasNext() ) { var k = $it13.next();
 			{
-				this.buf.add(":");
-				this.buf.add(k);
+				this.buf.b += ":";
+				this.buf.b += k;
 				this.serialize(v1.get(k));
 			}
 			}}
-			this.buf.add("h");
+			this.buf.b += "h";
+		}break;
+		case haxe.io.Bytes:{
+			var v1 = v;
+			var i = 0;
+			var max = v1.length - 2;
+			var chars = "";
+			var b64 = haxe.Serializer.BASE64;
+			while(i < max) {
+				var b1 = v1.b[i++];
+				var b2 = v1.b[i++];
+				var b3 = v1.b[i++];
+				chars += b64.charAt(b1 >> 2) + b64.charAt(((b1 << 4) | (b2 >> 4)) & 63) + b64.charAt(((b2 << 2) | (b3 >> 6)) & 63) + b64.charAt(b3 & 63);
+			}
+			if(i == max) {
+				var b1 = v1.b[i++];
+				var b2 = v1.b[i++];
+				chars += b64.charAt(b1 >> 2) + b64.charAt(((b1 << 4) | (b2 >> 4)) & 63) + b64.charAt((b2 << 2) & 63);
+			}
+			else if(i == max + 1) {
+				var b1 = v1.b[i++];
+				chars += b64.charAt(b1 >> 2) + b64.charAt((b1 << 4) & 63);
+			}
+			this.buf.b += "s";
+			this.buf.b += chars.length;
+			this.buf.b += ":";
+			this.buf.b += chars;
 		}break;
 		default:{
 			this.cache.pop();
-			this.buf.add("c");
+			this.buf.b += "c";
 			this.serializeString(Type.getClassName(c));
 			this.cache.push(v);
 			this.serializeFields(v);
@@ -1375,7 +1723,7 @@ haxe.Serializer.prototype.serialize = function(v) {
 	case 4:
 	{
 		if(this.useCache && this.serializeRef(v)) return;
-		this.buf.add("o");
+		this.buf.b += "o";
 		this.serializeFields(v);
 	}break;
 	case 7:
@@ -1383,16 +1731,16 @@ haxe.Serializer.prototype.serialize = function(v) {
 	{
 		if(this.useCache && this.serializeRef(v)) return;
 		this.cache.pop();
-		this.buf.add((this.useEnumIndex?"j":"w"));
+		this.buf.b += (this.useEnumIndex?"j":"w");
 		this.serializeString(Type.getEnumName(e));
 		if(this.useEnumIndex) {
-			this.buf.add(":");
-			this.buf.add(v[1]);
+			this.buf.b += ":";
+			this.buf.b += v[1];
 		}
 		else this.serializeString(v[0]);
-		this.buf.add(":");
+		this.buf.b += ":";
 		var l = v["length"];
-		this.buf.add(l - 2);
+		this.buf.b += l - 2;
 		{
 			var _g = 2;
 			while(_g < l) {
@@ -1412,7 +1760,7 @@ haxe.Serializer.prototype.serialize = function(v) {
 	}
 }
 haxe.Serializer.prototype.serializeException = function(e) {
-	this.buf.add("x");
+	this.buf.b += "x";
 	this.serialize(e);
 }
 haxe.Serializer.prototype.serializeFields = function(v) {
@@ -1425,7 +1773,7 @@ haxe.Serializer.prototype.serializeFields = function(v) {
 			this.serialize(Reflect.field(v,f));
 		}
 	}
-	this.buf.add("g");
+	this.buf.b += "g";
 }
 haxe.Serializer.prototype.serializeRef = function(v) {
 	var vt = typeof(v);
@@ -1435,8 +1783,8 @@ haxe.Serializer.prototype.serializeRef = function(v) {
 			var i = _g1++;
 			var ci = this.cache[i];
 			if(typeof(ci) == vt && ci == v) {
-				this.buf.add("r");
-				this.buf.add(i);
+				this.buf.b += "r";
+				this.buf.b += i;
 				return true;
 			}
 		}
@@ -1447,20 +1795,20 @@ haxe.Serializer.prototype.serializeRef = function(v) {
 haxe.Serializer.prototype.serializeString = function(s) {
 	var x = this.shash.get(s);
 	if(x != null) {
-		this.buf.add("R");
-		this.buf.add(x);
+		this.buf.b += "R";
+		this.buf.b += x;
 		return;
 	}
 	this.shash.set(s,this.scount++);
-	this.buf.add("y");
+	this.buf.b += "y";
 	s = StringTools.urlEncode(s);
-	this.buf.add(s.length);
-	this.buf.add(":");
-	this.buf.add(s);
+	this.buf.b += s.length;
+	this.buf.b += ":";
+	this.buf.b += s;
 }
 haxe.Serializer.prototype.shash = null;
 haxe.Serializer.prototype.toString = function() {
-	return this.buf.toString();
+	return this.buf.b;
 }
 haxe.Serializer.prototype.useCache = null;
 haxe.Serializer.prototype.useEnumIndex = null;
@@ -1486,7 +1834,7 @@ List = function(p) { if( p === $_ ) return; {
 }}
 List.__name__ = ["List"];
 List.prototype.add = function(item) {
-	var x = [item,null];
+	var x = [item];
 	if(this.h == null) this.h = x;
 	else this.q[1] = x;
 	this.q = x;
@@ -1517,12 +1865,10 @@ List.prototype.iterator = function() {
 	return { h : this.h, hasNext : function() {
 		return (this.h != null);
 	}, next : function() {
-		{
-			if(this.h == null) return null;
-			var x = this.h[0];
-			this.h = this.h[1];
-			return x;
-		}
+		if(this.h == null) return null;
+		var x = this.h[0];
+		this.h = this.h[1];
+		return x;
 	}}
 }
 List.prototype.join = function(sep) {
@@ -1531,11 +1877,11 @@ List.prototype.join = function(sep) {
 	var l = this.h;
 	while(l != null) {
 		if(first) first = false;
-		else s.add(sep);
-		s.add(l[0]);
+		else s.b += sep;
+		s.b += l[0];
 		l = l[1];
 	}
-	return s.toString();
+	return s.b;
 }
 List.prototype.last = function() {
 	return (this.q == null?null:this.q[0]);
@@ -1586,134 +1932,17 @@ List.prototype.toString = function() {
 	var s = new StringBuf();
 	var first = true;
 	var l = this.h;
-	s.add("{");
+	s.b += "{";
 	while(l != null) {
 		if(first) first = false;
-		else s.add(", ");
-		s.add(l[0]);
+		else s.b += ", ";
+		s.b += l[0];
 		l = l[1];
 	}
-	s.add("}");
-	return s.toString();
+	s.b += "}";
+	return s.b;
 }
 List.prototype.__class__ = List;
-haxe.Http = function(url) { if( url === $_ ) return; {
-	this.url = url;
-	this.headers = new Hash();
-	this.params = new Hash();
-	this.async = true;
-}}
-haxe.Http.__name__ = ["haxe","Http"];
-haxe.Http.request = function(url) {
-	var h = new haxe.Http(url);
-	h.async = false;
-	var r = null;
-	h.onData = function(d) {
-		r = d;
-	}
-	h.onError = function(e) {
-		throw e;
-	}
-	h.request(false);
-	return r;
-}
-haxe.Http.prototype.async = null;
-haxe.Http.prototype.headers = null;
-haxe.Http.prototype.onData = function(data) {
-	null;
-}
-haxe.Http.prototype.onError = function(msg) {
-	null;
-}
-haxe.Http.prototype.onStatus = function(status) {
-	null;
-}
-haxe.Http.prototype.params = null;
-haxe.Http.prototype.postData = null;
-haxe.Http.prototype.request = function(post) {
-	var me = this;
-	var r = new js.XMLHttpRequest();
-	var onreadystatechange = function() {
-		if(r.readyState != 4) return;
-		var s = function($this) {
-			var $r;
-			try {
-				$r = r.status;
-			}
-			catch( $e13 ) {
-				{
-					var e = $e13;
-					$r = null;
-				}
-			}
-			return $r;
-		}(this);
-		if(s == undefined) s = null;
-		if(s != null) me.onStatus(s);
-		if(s != null && s >= 200 && s < 400) me.onData(r.responseText);
-		else switch(s) {
-		case null:{
-			me.onError("Failed to connect or resolve host");
-		}break;
-		case 12029:{
-			me.onError("Failed to connect to host");
-		}break;
-		case 12007:{
-			me.onError("Unknown host");
-		}break;
-		default:{
-			me.onError("Http Error #" + r.status);
-		}break;
-		}
-	}
-	r.onreadystatechange = onreadystatechange;
-	var uri = this.postData;
-	if(uri != null) post = true;
-	else { var $it14 = this.params.keys();
-	while( $it14.hasNext() ) { var p = $it14.next();
-	{
-		if(uri == null) uri = "";
-		else uri += "&";
-		uri += StringTools.urlDecode(p) + "=" + StringTools.urlEncode(this.params.get(p));
-	}
-	}}
-	try {
-		if(post) r.open("POST",this.url,this.async);
-		else if(uri != null) {
-			var question = this.url.split("?").length <= 1;
-			r.open("GET",this.url + ((question?"?":"&")) + uri,this.async);
-			uri = null;
-		}
-		else r.open("GET",this.url,this.async);
-	}
-	catch( $e15 ) {
-		{
-			var e = $e15;
-			{
-				this.onError(e.toString());
-				return;
-			}
-		}
-	}
-	if(this.headers.get("Content-Type") == null && post && this.postData == null) r.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-	{ var $it16 = this.headers.keys();
-	while( $it16.hasNext() ) { var h = $it16.next();
-	r.setRequestHeader(h,this.headers.get(h));
-	}}
-	r.send(uri);
-	if(!this.async) onreadystatechange();
-}
-haxe.Http.prototype.setHeader = function(header,value) {
-	this.headers.set(header,value);
-}
-haxe.Http.prototype.setParameter = function(param,value) {
-	this.params.set(param,value);
-}
-haxe.Http.prototype.setPostData = function(data) {
-	this.postData = data;
-}
-haxe.Http.prototype.url = null;
-haxe.Http.prototype.__class__ = haxe.Http;
 ValueType = { __ename__ : ["ValueType"], __constructs__ : ["TNull","TInt","TFloat","TBool","TObject","TFunction","TClass","TEnum","TUnknown"] }
 ValueType.TBool = ["TBool",3];
 ValueType.TBool.toString = $estr;
@@ -1754,15 +1983,12 @@ js.Lib.setErrorHandler = function(f) {
 }
 js.Lib.prototype.__class__ = js.Lib;
 MultiplatformComm = function(p) { if( p === $_ ) return; {
-	(haxe.Timer.delayed($closure(this,"init"),800))();
+	var facade = org.puremvc.haxe.examples.multiplatformComm.MultiplatformFacade.getInstance();
+	facade.sendNotification("startup");
 }}
 MultiplatformComm.__name__ = ["MultiplatformComm"];
 MultiplatformComm.main = function() {
 	var app = new MultiplatformComm();
-}
-MultiplatformComm.prototype.init = function() {
-	var facade = org.puremvc.haxe.examples.multiplatformComm.MultiplatformFacade.getInstance();
-	facade.sendNotification("startup");
 }
 MultiplatformComm.prototype.__class__ = MultiplatformComm;
 js.Boot = function() { }
@@ -1771,110 +1997,102 @@ js.Boot.__unhtml = function(s) {
 	return s.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;");
 }
 js.Boot.__trace = function(v,i) {
-	{
-		var msg = (i != null?i.fileName + ":" + i.lineNumber + ": ":"");
-		msg += js.Boot.__unhtml(js.Boot.__string_rec(v,"")) + "<br/>";
-		var d = document.getElementById("haxe:trace");
-		if(d == null) alert("No haxe:trace element defined\n" + msg);
-		else d.innerHTML += msg;
-	}
+	var msg = (i != null?i.fileName + ":" + i.lineNumber + ": ":"");
+	msg += js.Boot.__unhtml(js.Boot.__string_rec(v,"")) + "<br/>";
+	var d = document.getElementById("haxe:trace");
+	if(d == null) alert("No haxe:trace element defined\n" + msg);
+	else d.innerHTML += msg;
 }
 js.Boot.__clear_trace = function() {
-	{
-		var d = document.getElementById("haxe:trace");
-		if(d != null) d.innerHTML = "";
-		else null;
-	}
+	var d = document.getElementById("haxe:trace");
+	if(d != null) d.innerHTML = "";
+	else null;
 }
 js.Boot.__closure = function(o,f) {
-	{
-		var m = o[f];
-		if(m == null) return null;
-		var f1 = function() {
-			return m.apply(o,arguments);
-		}
-		f1.scope = o;
-		f1.method = m;
-		return f1;
+	var m = o[f];
+	if(m == null) return null;
+	var f1 = function() {
+		return m.apply(o,arguments);
 	}
+	f1.scope = o;
+	f1.method = m;
+	return f1;
 }
 js.Boot.__string_rec = function(o,s) {
-	{
-		if(o == null) return "null";
-		if(s.length >= 5) return "<...>";
-		var t = typeof(o);
-		if(t == "function" && (o.__name__ != null || o.__ename__ != null)) t = "object";
-		switch(t) {
-		case "object":{
-			if(o instanceof Array) {
-				if(o.__enum__ != null) {
-					if(o.length == 2) return o[0];
-					var str = o[0] + "(";
-					s += "\t";
-					{
-						var _g1 = 2, _g = o.length;
-						while(_g1 < _g) {
-							var i = _g1++;
-							if(i != 2) str += "," + js.Boot.__string_rec(o[i],s);
-							else str += js.Boot.__string_rec(o[i],s);
-						}
-					}
-					return str + ")";
-				}
-				var l = o.length;
-				var i;
-				var str = "[";
+	if(o == null) return "null";
+	if(s.length >= 5) return "<...>";
+	var t = typeof(o);
+	if(t == "function" && (o.__name__ != null || o.__ename__ != null)) t = "object";
+	switch(t) {
+	case "object":{
+		if(o instanceof Array) {
+			if(o.__enum__ != null) {
+				if(o.length == 2) return o[0];
+				var str = o[0] + "(";
 				s += "\t";
 				{
-					var _g = 0;
-					while(_g < l) {
-						var i1 = _g++;
-						str += ((i1 > 0?",":"")) + js.Boot.__string_rec(o[i1],s);
+					var _g1 = 2, _g = o.length;
+					while(_g1 < _g) {
+						var i = _g1++;
+						if(i != 2) str += "," + js.Boot.__string_rec(o[i],s);
+						else str += js.Boot.__string_rec(o[i],s);
 					}
 				}
-				str += "]";
-				return str;
+				return str + ")";
 			}
-			var tostr;
-			try {
-				tostr = o.toString;
-			}
-			catch( $e17 ) {
-				{
-					var e = $e17;
-					{
-						return "???";
-					}
-				}
-			}
-			if(tostr != null && tostr != Object.toString) {
-				var s2 = o.toString();
-				if(s2 != "[object Object]") return s2;
-			}
-			var k;
-			var str = "{\n";
+			var l = o.length;
+			var i;
+			var str = "[";
 			s += "\t";
-			var hasp = (o.hasOwnProperty != null);
-			for( var k in o ) { ;
-			if(hasp && !o.hasOwnProperty(k)) continue;
-			if(k == "prototype" || k == "__class__" || k == "__super__" || k == "__interfaces__") continue;
-			if(str.length != 2) str += ", \n";
-			str += s + k + " : " + js.Boot.__string_rec(o[k],s);
+			{
+				var _g = 0;
+				while(_g < l) {
+					var i1 = _g++;
+					str += ((i1 > 0?",":"")) + js.Boot.__string_rec(o[i1],s);
+				}
 			}
-			s = s.substring(1);
-			str += "\n" + s + "}";
+			str += "]";
 			return str;
-		}break;
-		case "function":{
-			return "<function>";
-		}break;
-		case "string":{
-			return o;
-		}break;
-		default:{
-			return String(o);
-		}break;
 		}
+		var tostr;
+		try {
+			tostr = o.toString;
+		}
+		catch( $e14 ) {
+			{
+				var e = $e14;
+				{
+					return "???";
+				}
+			}
+		}
+		if(tostr != null && tostr != Object.toString) {
+			var s2 = o.toString();
+			if(s2 != "[object Object]") return s2;
+		}
+		var k = null;
+		var str = "{\n";
+		s += "\t";
+		var hasp = (o.hasOwnProperty != null);
+		for( var k in o ) { ;
+		if(hasp && !o.hasOwnProperty(k)) continue;
+		if(k == "prototype" || k == "__class__" || k == "__super__" || k == "__interfaces__") continue;
+		if(str.length != 2) str += ", \n";
+		str += s + k + " : " + js.Boot.__string_rec(o[k],s);
+		}
+		s = s.substring(1);
+		str += "\n" + s + "}";
+		return str;
+	}break;
+	case "function":{
+		return "<function>";
+	}break;
+	case "string":{
+		return o;
+	}break;
+	default:{
+		return String(o);
+	}break;
 	}
 }
 js.Boot.__interfLoop = function(cc,cl) {
@@ -1892,103 +2110,90 @@ js.Boot.__interfLoop = function(cc,cl) {
 	return js.Boot.__interfLoop(cc.__super__,cl);
 }
 js.Boot.__instanceof = function(o,cl) {
-	{
-		try {
-			if(o instanceof cl) {
-				if(cl == Array) return (o.__enum__ == null);
-				return true;
-			}
-			if(js.Boot.__interfLoop(o.__class__,cl)) return true;
-		}
-		catch( $e18 ) {
-			{
-				var e = $e18;
-				{
-					if(cl == null) return false;
-				}
-			}
-		}
-		switch(cl) {
-		case Int:{
-			return (Math.ceil(o) === o) && isFinite(o);
-		}break;
-		case Float:{
-			return typeof(o) == "number";
-		}break;
-		case Bool:{
-			return (o === true || o === false);
-		}break;
-		case String:{
-			return typeof(o) == "string";
-		}break;
-		case Dynamic:{
+	try {
+		if(o instanceof cl) {
+			if(cl == Array) return (o.__enum__ == null);
 			return true;
-		}break;
-		default:{
-			if(o != null && o.__enum__ == cl) return true;
-			return false;
-		}break;
 		}
+		if(js.Boot.__interfLoop(o.__class__,cl)) return true;
+	}
+	catch( $e15 ) {
+		{
+			var e = $e15;
+			{
+				if(cl == null) return false;
+			}
+		}
+	}
+	switch(cl) {
+	case Int:{
+		return Math.ceil(o) === o && isFinite(o);
+	}break;
+	case Float:{
+		return typeof(o) == "number";
+	}break;
+	case Bool:{
+		return o === true || o === false;
+	}break;
+	case String:{
+		return typeof(o) == "string";
+	}break;
+	case Dynamic:{
+		return true;
+	}break;
+	default:{
+		if(o == null) return false;
+		return o.__enum__ == cl || (cl == Class && o.__name__ != null) || (cl == Enum && o.__ename__ != null);
+	}break;
 	}
 }
 js.Boot.__init = function() {
-	{
-		js.Lib.isIE = (document.all != null && window.opera == null);
-		js.Lib.isOpera = (window.opera != null);
-		Array.prototype.copy = Array.prototype.slice;
-		Array.prototype.insert = function(i,x) {
-			this.splice(i,0,x);
-		}
-		Array.prototype.remove = function(obj) {
-			var i = 0;
-			var l = this.length;
-			while(i < l) {
-				if(this[i] == obj) {
-					this.splice(i,1);
-					return true;
-				}
-				i++;
-			}
-			return false;
-		}
-		Array.prototype.iterator = function() {
-			return { cur : 0, arr : this, hasNext : function() {
-				return this.cur < this.arr.length;
-			}, next : function() {
-				return this.arr[this.cur++];
-			}}
-		}
-		String.prototype.__class__ = String;
-		String.__name__ = ["String"];
-		Array.prototype.__class__ = Array;
-		Array.__name__ = ["Array"];
-		var cca = String.prototype.charCodeAt;
-		String.prototype.charCodeAt = function(i) {
-			var x = cca.call(this,i);
-			if(isNaN(x)) return null;
-			return x;
-		}
-		var oldsub = String.prototype.substr;
-		String.prototype.substr = function(pos,len) {
-			if(pos != null && pos != 0 && len != null && len < 0) return "";
-			if(len == null) len = this.length;
-			if(pos < 0) {
-				pos = this.length + pos;
-				if(pos < 0) pos = 0;
-			}
-			else if(len < 0) {
-				len = this.length + len - pos;
-			}
-			return oldsub.apply(this,[pos,len]);
-		}
-		Int = new Object();
-		Dynamic = new Object();
-		Float = Number;
-		Bool = new Object();
-		Bool["true"] = true;
-		Bool["false"] = false;
-		$closure = js.Boot.__closure;
+	js.Lib.isIE = (document.all != null && window.opera == null);
+	js.Lib.isOpera = (window.opera != null);
+	Array.prototype.copy = Array.prototype.slice;
+	Array.prototype.insert = function(i,x) {
+		this.splice(i,0,x);
 	}
+	Array.prototype.remove = function(obj) {
+		var i = 0;
+		var l = this.length;
+		while(i < l) {
+			if(this[i] == obj) {
+				this.splice(i,1);
+				return true;
+			}
+			i++;
+		}
+		return false;
+	}
+	Array.prototype.iterator = function() {
+		return { cur : 0, arr : this, hasNext : function() {
+			return this.cur < this.arr.length;
+		}, next : function() {
+			return this.arr[this.cur++];
+		}}
+	}
+	var cca = String.prototype.charCodeAt;
+	String.prototype.cca = cca;
+	String.prototype.charCodeAt = function(i) {
+		var x = cca.call(this,i);
+		if(isNaN(x)) return null;
+		return x;
+	}
+	var oldsub = String.prototype.substr;
+	String.prototype.substr = function(pos,len) {
+		if(pos != null && pos != 0 && len != null && len < 0) return "";
+		if(len == null) len = this.length;
+		if(pos < 0) {
+			pos = this.length + pos;
+			if(pos < 0) pos = 0;
+		}
+		else if(len < 0) {
+			len = this.length + len - pos;
+		}
+		return oldsub.apply(this,[pos,len]);
+	}
+	$closure = js.Boot.__closure;
 }
 js.Boot.prototype.__class__ = js.Boot;
 IntHash = function(p) { if( p === $_ ) return; {
@@ -2033,19 +2238,19 @@ IntHash.prototype.set = function(key,value) {
 }
 IntHash.prototype.toString = function() {
 	var s = new StringBuf();
-	s.add("{");
+	s.b += "{";
 	var it = this.keys();
-	{ var $it19 = it;
-	while( $it19.hasNext() ) { var i = $it19.next();
+	{ var $it16 = it;
+	while( $it16.hasNext() ) { var i = $it16.next();
 	{
-		s.add(i);
-		s.add(" => ");
-		s.add(Std.string(this.get(i)));
-		if(it.hasNext()) s.add(", ");
+		s.b += i;
+		s.b += " => ";
+		s.b += Std.string(this.get(i));
+		if(it.hasNext()) s.b += ", ";
 	}
 	}}
-	s.add("}");
-	return s.toString();
+	s.b += "}";
+	return s.b;
 }
 IntHash.prototype.__class__ = IntHash;
 org.puremvc.haxe.examples.multiplatformComm.view.BoxMediator = function(name,viewComponent) { if( name === $_ ) return; {
@@ -2105,162 +2310,9 @@ org.puremvc.haxe.patterns.observer.Notification.prototype.toString = function() 
 org.puremvc.haxe.patterns.observer.Notification.prototype.type = null;
 org.puremvc.haxe.patterns.observer.Notification.prototype.__class__ = org.puremvc.haxe.patterns.observer.Notification;
 org.puremvc.haxe.patterns.observer.Notification.__interfaces__ = [org.puremvc.haxe.interfaces.INotification];
-haxe.remoting = {}
-haxe.remoting.Connection = function(data,path) { if( data === $_ ) return; {
-	this.__data = data;
-	this.__path = path;
-}}
-haxe.remoting.Connection.__name__ = ["haxe","remoting","Connection"];
-haxe.remoting.Connection.doCall = function(path,f,params) {
-	try {
-		var params1 = new haxe.Unserializer(params).unserialize();
-		var obj = js.Lib.eval(path);
-		var fun = Reflect.field(obj,f);
-		if(fun == null) throw "Invalid remoting call : " + path + "." + f;
-		var v = Reflect.callMethod(obj,fun,params1);
-		var s = new haxe.Serializer();
-		s.serialize(v);
-		return s.toString() + "#";
-	}
-	catch( $e20 ) {
-		{
-			var e = $e20;
-			{
-				var s = new haxe.Serializer();
-				s.serializeException(e);
-				return s.toString();
-			}
-		}
-	}
-}
-haxe.remoting.Connection.jsRemoting = function() {
-	return "yes";
-}
-haxe.remoting.Connection.bind = function(name,obj) {
-	_cnx[name] = obj;
-}
-haxe.remoting.Connection.flashConnect = function(objId) {
-	var x = window.document[objId];
-	if(x == null) throw "Could not find flash object '" + objId + "'";
-	if(x.remotingCall == null) throw "The flash object is not ready or does not contain haxe.remoting.Connection";
-	return new haxe.remoting.Connection(x,[]);
-}
-haxe.remoting.Connection.urlConnect = function(url) {
-	return new haxe.remoting.Connection(url,[]);
-}
-haxe.remoting.Connection.prototype.__data = null;
-haxe.remoting.Connection.prototype.__path = null;
-haxe.remoting.Connection.prototype.__resolve = function(field) {
-	var s = new haxe.remoting.Connection(this.__data,this.__path.copy());
-	s.__path.push(field);
-	return s;
-}
-haxe.remoting.Connection.prototype.call = function(params) {
-	var s = new haxe.Serializer();
-	var data;
-	if(this.__data.remotingCall == null) {
-		var h = new haxe.Http(this.__data);
-		h.async = false;
-		h.onData = function(d) {
-			data = d;
-		}
-		h.onError = function(e) {
-			throw e;
-		}
-		h.setHeader("X-Haxe-Remoting","1");
-		s.serialize(this.__path);
-		s.serialize(params);
-		h.setParameter("__x",s.toString());
-		h.request(true);
-		if(data.substr(0,3) != "hxr") throw "Invalid response : '" + data + "'";
-		data = data.substr(3);
-	}
-	else {
-		var p = this.__path.copy();
-		var f = p.pop();
-		var path = p.join(".");
-		s.serialize(params);
-		var params1 = s.toString();
-		data = this.__data.remotingCall(path,f,params1);
-		if(data == null) throw "Failed to call Flash method " + this.__path.join(".");
-	}
-	return new haxe.Unserializer(data).unserialize();
-}
-haxe.remoting.Connection.prototype.__class__ = haxe.remoting.Connection;
-Hash = function(p) { if( p === $_ ) return; {
-	{
-		this.h = {}
-		if(this.h.__proto__ != null) {
-			this.h.__proto__ = null;
-			delete(this.h.__proto__);
-		}
-		else null;
-	}
-}}
-Hash.__name__ = ["Hash"];
-Hash.prototype.exists = function(key) {
-	try {
-		key = "$" + key;
-		return this.hasOwnProperty.call(this.h,key);
-	}
-	catch( $e21 ) {
-		{
-			var e = $e21;
-			{
-				
-				for(var i in this.h)
-					if( i == key ) return true;
-			;
-				return false;
-			}
-		}
-	}
-}
-Hash.prototype.get = function(key) {
-	return this.h["$" + key];
-}
-Hash.prototype.h = null;
-Hash.prototype.iterator = function() {
-	return { ref : this.h, it : this.keys(), hasNext : function() {
-		return this.it.hasNext();
-	}, next : function() {
-		var i = this.it.next();
-		return this.ref["$" + i];
-	}}
-}
-Hash.prototype.keys = function() {
-	var a = new Array();
-	
-			for(var i in this.h)
-				a.push(i.substr(1));
-		;
-	return a.iterator();
-}
-Hash.prototype.remove = function(key) {
-	if(!this.exists(key)) return false;
-	delete(this.h["$" + key]);
-	return true;
-}
-Hash.prototype.set = function(key,value) {
-	this.h["$" + key] = value;
-}
-Hash.prototype.toString = function() {
-	var s = new StringBuf();
-	s.add("{");
-	var it = this.keys();
-	{ var $it22 = it;
-	while( $it22.hasNext() ) { var i = $it22.next();
-	{
-		s.add(i);
-		s.add(" => ");
-		s.add(Std.string(this.get(i)));
-		if(it.hasNext()) s.add(", ");
-	}
-	}}
-	s.add("}");
-	return s.toString();
-}
-Hash.prototype.__class__ = Hash;
+$Main = function() { }
+$Main.__name__ = ["@Main"];
+$Main.prototype.__class__ = $Main;
 $_ = {}
 js.Boot.__res = {}
 js.Boot.__init();
@@ -2300,15 +2352,30 @@ js.Boot.__init();
 		}
 	}
 	Date.prototype["toString"] = function() {
-		var m = this.getMonth() + 1;
-		var d = this.getDate();
-		var h = this.getHours();
-		var mi = this.getMinutes();
-		var s = this.getSeconds();
-		return this.getFullYear() + "-" + ((m < 10?"0" + m:"" + m)) + "-" + ((d < 10?"0" + d:"" + d)) + " " + ((h < 10?"0" + h:"" + h)) + ":" + ((mi < 10?"0" + mi:"" + mi)) + ":" + ((s < 10?"0" + s:"" + s));
+		var date = this;
+		var m = date.getMonth() + 1;
+		var d = date.getDate();
+		var h = date.getHours();
+		var mi = date.getMinutes();
+		var s = date.getSeconds();
+		return date.getFullYear() + "-" + ((m < 10?"0" + m:"" + m)) + "-" + ((d < 10?"0" + d:"" + d)) + " " + ((h < 10?"0" + h:"" + h)) + ":" + ((mi < 10?"0" + mi:"" + mi)) + ":" + ((s < 10?"0" + s:"" + s));
 	}
 	Date.prototype.__class__ = Date;
 	Date.__name__ = ["Date"];
+}
+{
+	String.prototype.__class__ = String;
+	String.__name__ = ["String"];
+	Array.prototype.__class__ = Array;
+	Array.__name__ = ["Array"];
+	Int = { __name__ : ["Int"]}
+	Dynamic = { __name__ : ["Dynamic"]}
+	Float = Number;
+	Float.__name__ = ["Float"];
+	Bool = { __ename__ : ["Bool"]}
+	Class = { __name__ : ["Class"]}
+	Enum = { }
+	Void = { __ename__ : ["Void"]}
 }
 {
 	Math.NaN = Number["NaN"];
@@ -2320,64 +2387,34 @@ js.Boot.__init();
 	Math.isNaN = function(i) {
 		return isNaN(i);
 	}
+	Math.__name__ = ["Math"];
 }
 {
-	
-			onerror = function(msg,url,line) {
-				var f = js.Lib.onerror;
-				if( f == null )
-					return false;
-				return f(msg,[url+":"+line]);
-			}
-		;
-}
-{
-	js["XMLHttpRequest"] = (window.XMLHttpRequest?XMLHttpRequest:(window.ActiveXObject?function() {
-		try {
-			return new ActiveXObject("Msxml2.XMLHTTP");
-		}
-		catch( $e23 ) {
-			{
-				var e = $e23;
-				{
-					try {
-						return new ActiveXObject("Microsoft.XMLHTTP");
-					}
-					catch( $e24 ) {
-						{
-							var e1 = $e24;
-							{
-								throw "Unable to create XMLHttpRequest object.";
-							}
-						}
-					}
-				}
-			}
-		}
-	}:function($this) {
-		var $r;
-		throw "Unable to create XMLHttpRequest object.";
-		return $r;
-	}(this)));
-}
-{
-	_cnx = new Object();
+	onerror = function(msg,url,line) {
+		var f = js.Lib.onerror;
+		if( f == null )
+			return false;
+		return f(msg,[url+":"+line]);
+	}
 }
 org.puremvc.haxe.patterns.mediator.Mediator.NAME = "Mediator";
 org.puremvc.haxe.examples.multiplatformComm.view.InputMediator.NAME = "InputMediator";
+haxe.remoting.ExternalConnection.connections = new Hash();
 org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer.JS_TYPE = "js_type";
 org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer.FL9_TYPE = "fl9_type";
 org.puremvc.haxe.examples.multiplatformComm.view.ui.BoxContainer.FL8_TYPE = "fl8_type";
-haxe.Timer.arr = new Array();
-haxe.Timer.fqueue = new Array();
 haxe.Unserializer.DEFAULT_RESOLVER = Type;
+haxe.Unserializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
+haxe.Unserializer.CODES = null;
 haxe.Serializer.USE_CACHE = false;
 haxe.Serializer.USE_ENUM_INDEX = false;
+haxe.Serializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
 org.puremvc.haxe.examples.multiplatformComm.MultiplatformFacade.STARTUP = "startup";
 org.puremvc.haxe.examples.multiplatformComm.MultiplatformFacade.VALUE_SET = "value_set";
 js.Lib.document = document;
 js.Lib.window = window;
 js.Lib.onerror = null;
+org.puremvc.haxe.examples.multiplatformComm.view.BoxMediator.FL8_BOX_MEDIATOR = "fl8_box_mediator";
 org.puremvc.haxe.examples.multiplatformComm.view.BoxMediator.FL9_BOX_MEDIATOR = "fl9_box_mediator";
 org.puremvc.haxe.examples.multiplatformComm.view.BoxMediator.JS_BOX_MEDIATOR = "js_box_mediator";
-org.puremvc.haxe.examples.multiplatformComm.view.BoxMediator.FL8_BOX_MEDIATOR = "fl8_box_mediator";
+$Main.init = MultiplatformComm.main();
