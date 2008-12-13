@@ -1,0 +1,20 @@
+PureMVC haXe Demo - JavaScript / Flash Multiplatform Comm
+By Marco Secchi <marco.secchi@puremvc.org>
+Copyright(c) 2008 Marco Secchi, Some rights reserved.
+--------------------------------------------------------------------------
+This demo illustrates the use of haXe to cross-compile an application for Flash 8, Flash 9 and JavaScript from the same source code, and then to communicate with each from external JavaScript code.
+
+Note: as usual I've left the demo to his bare minimum, so this demo is about js/flash communication (and not about js/swf file loading/sync). If you experience some problem (i.e.: some boxes nor moving), try just refreshing the page.
+
+Writing a multiplatform application is very easy. Just follow the best pratices for any pureMVC application and go on writing the core. You can choose any platform as the basis (as for flash, versions 8/9 are are available as haxe remoting supports them only).
+
+The only difference from a 'traditional' application is that you have to consider the various views/uis in an abstract way.
+
+Enter pureMVC Mediators...
+As you'll see from the code the BoxMediator controls a BoxContainer type. The BoxContainer can be a real view component (in this example a js DOM element) or an "abstract" view component.
+In this example an abstract view is simply an external flash application with a box drawn on it.
+Communication is then obtained using haxe remoting.
+
+For more info on haxe remoting read the following tutorials:
+http://haxe.org/tutos/remoting
+http://haxe.org/tutos/remoting/flash_js
