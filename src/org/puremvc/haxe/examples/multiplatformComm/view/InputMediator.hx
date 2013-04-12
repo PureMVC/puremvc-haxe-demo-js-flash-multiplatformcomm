@@ -9,8 +9,6 @@ import org.puremvc.haxe.patterns.mediator.Mediator;
 import org.puremvc.haxe.interfaces.INotification;
 import org.puremvc.haxe.examples.multiplatformComm.MultiplatformFacade;
 
-import js.Dom;
-
 class InputMediator extends Mediator
 {
 	public static inline var NAME: String = "InputMediator";
@@ -21,15 +19,26 @@ class InputMediator extends Mediator
 	public function new()
 	{
 		super();
+		
+		#if haxe3
+		js.Browser.document.getElementById( "send_link" ).onclick = onLinkClick;
+		#else
 		js.Lib.document.getElementById( "send_link" ).onclick = onLinkClick;
+		#end
 	}
 	
 	/**
 	 * Click Handler. Checks if input value is acceptable and sends notification
 	 */
-	private function onLinkClick( evt: js.Event ): Void
+	private function onLinkClick( _ ): Void
 	{
-		var val = Std.parseInt( cast( js.Lib.document.getElementById( "distance" ) ).value );
+		#if haxe3
+		var document = js.Browser.document;
+		#else
+		var document = js.Lib.document;
+		#end
+		
+		var val = Std.parseInt( cast( document.getElementById( "distance" ) ).value );
 		if ( val == null || val < 0 || val > 500 )
 			js.Lib.alert( "value should be a number between 0 and 500." );
 		else
