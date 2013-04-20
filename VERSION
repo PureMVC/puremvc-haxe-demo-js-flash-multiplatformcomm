@@ -1,11 +1,13 @@
 PureMVC Haxe Demo - JavaScript / Flash Multiplatform Comm
 --------------------------------------------------------------------------
-Release Date: 04/17/08
+Release Date: 4/20/13
     Platform: haXe - JavaScript, Flash 8, 9
      Version: 1 
-    Revision: 1    
+    Revision: 2   
       Author: Marco Secchi <marco.secchi@puremvc.org>
 --------------------------------------------------------------------------
+1.2   Haxe 3 support added by zjnue
+
 1.1   haXe 2.0 compatibility. This version is no longer compatible with 
       older versions of haXe.
 
