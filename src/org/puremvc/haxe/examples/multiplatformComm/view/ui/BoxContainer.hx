@@ -35,7 +35,11 @@ class BoxContainer
 		switch( _type )
 		{
 			case JS_TYPE:
+				#if haxe3
+				js.Browser.document.getElementById( "box" ).style.left = Std.string( val ) + "px";
+				#else
 				js.Lib.document.getElementById( "box" ).style.left = Std.string( val ) + "px";
+				#end
 			case FL9_TYPE:
 				_conn.ExternalView_fl9.update.call( [ val ] );
 			case FL8_TYPE:
