@@ -8,7 +8,7 @@ This demo illustrates the use of haXe to cross-compile an application for Flash 
 ![PureMVC Haxe Demo: Multi-platform Communications](http://puremvc.org/pages/images/screenshots/PureMVC-Shot-Haxe-MultiplatformComm.png)
 
 ## Status
-Production - [Version 1.1](https://github.com/PureMVC/puremvc-haxe-demo-js-flash-multiplatformcomm/blob/master/VERSION)
+Production - [Version 1.2](https://github.com/PureMVC/puremvc-haxe-demo-js-flash-multiplatformcomm/blob/master/VERSION)
 
 ## Platforms / Technologies
 * [Haxe](http://en.wikipedia.org/wiki/Haxe)
