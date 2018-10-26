@@ -1,7 +1,7 @@
 ## [PureMVC](http://puremvc.github.com/) [Haxe](https://github.com/PureMVC/puremvc-haxe-standard-framework/wiki) Demo: Multi-platform Communications
 This demo illustrates the use of haXe to cross-compile an application for Flash 8, Flash 9 and JavaScript from the same source code, and then to communicate with each from external JavaScript code.
 
-* [Live Demo](http://darkstar.puremvc.org/content_header.html?url=http://puremvc.org/pages/demos/Haxe/MultiplatformComm/&desc=PureMVC%20Haxe%20Demo:%20Multi-platform%20Communications)
+* [Live Demo](http://puremvc.org/pages/demos/Haxe/MultiplatformComm/)
 * [Discussion](http://forums.puremvc.org/index.php?topic=403)
 
 ## Screenshot
